@@ -10,11 +10,11 @@ As of 2023, the following embedding models for English are exposed through the `
 
 | Model class | Model name | Dimensions | Sequence length
 |:---:|:---|:---:|:---:
-BAAI General Embeddings | `BAAI/bge-large-en-v1.5` | 1024 | 512
-BAAI General Embeddings  | `BAAI/bge-base-en-v1.5` | 768 | 512
+BAAI General (Flag) Embedding | `BAAI/bge-large-en-v1.5` | 1024 | 512
+BAAI General (Flag) Embedding | `BAAI/bge-base-en-v1.5` | 768 | 512
 Alibaba General Text Embeddings | `thenlper/gte-large` | 1024 | 512
 Alibaba General Text Embeddings | `thenlper/gte-base` | 768 | 512
-BAAI General Embeddings  | `BAAI/bge-small-en-v1.5` | 384 | 512
+BAAI General (Flag) Embedding | `BAAI/bge-small-en-v1.5` | 384 | 512
 Alibaba General Text Embeddings | `thenlper/gte-small` | 384 | 512
 SentenceBERT | `sentence-transformers/all-MiniLM-L12-v2` | 384 | 256
 SentenceBERT | `sentence-transformers/all-MiniLM-L6-v2` | 384 | 256
