@@ -90,7 +90,7 @@ def ingest_batches(tbl: str, validated_data: list[JsonBlob]) -> Table:
     """Ingest batches of data for full-text index"""
     chunked_data = chunk_iterable(validated_data, CHUNKSIZE)
     for i, chunk in enumerate(chunked_data, 1):
-        tbl.add(chunk, mode="overwrite")
+        tbl.add(chunk, mode="append")
 
 
 def embed_batches(tbl: str, validated_data: list[JsonBlob]) -> Table:
@@ -99,8 +99,8 @@ def embed_batches(tbl: str, validated_data: list[JsonBlob]) -> Table:
     with ProcessPoolExecutor(max_workers=WORKERS) as executor:
         print(f"Adding vectors to table for ANN index...")
         for i, batch in enumerate(executor.map(vectorize_text, chunked_data), 1):
-            tbl.add(batch, mode="overwrite")
-            print(f"Finished inserting batch {i} to {tbl.name} table")
+            print(f"Inserting batch {i} to {tbl.name} table")
+            tbl.add(batch, mode="append")
 
 
 def main(tbl: Table, data: list[JsonBlob]) -> None:
@@ -127,9 +127,8 @@ def main(tbl: Table, data: list[JsonBlob]) -> None:
 if __name__ == "__main__":
     # fmt: off
     parser = argparse.ArgumentParser("Bulk index database from the wine reviews JSONL data")
-    parser.add_argument("--refresh", action="store_true", help="Whether to delete existing the database and create a new one")
     parser.add_argument("--limit", "-l", type=int, default=0, help="Limit the size of the dataset to load for testing purposes")
-    parser.add_argument("--chunksize", type=int, default=5000, help="Size of each chunk to break the dataset into before processing")
+    parser.add_argument("--chunksize", type=int, default=1000, help="Size of each chunk to break the dataset into before processing")
     parser.add_argument("--filename", type=str, default="winemag-data-130k-v2.jsonl.gz", help="Name of the JSONL zip file to use")
     parser.add_argument("--workers", type=int, default=4, help="Number of workers to use for vectorization")
     args = vars(parser.parse_args())
@@ -140,7 +139,6 @@ if __name__ == "__main__":
     FILENAME = args["filename"]
     CHUNKSIZE = args["chunksize"]
     WORKERS = args["workers"]
-    REFRESH = args["refresh"]
 
     data = list(get_json_data(DATA_DIR, FILENAME))
     assert data, "No data found in the specified file"
@@ -148,7 +146,7 @@ if __name__ == "__main__":
 
     DB_NAME = "./winemag"
     TABLE = "wines"
-    if REFRESH and os.path.exists(DB_NAME):
+    if os.path.exists(DB_NAME):
         shutil.rmtree(DB_NAME)
 
     db = lancedb.connect(DB_NAME)
