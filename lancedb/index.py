@@ -99,8 +99,8 @@ def embed_batches(tbl: str, validated_data: list[JsonBlob]) -> Table:
     with ProcessPoolExecutor(max_workers=WORKERS) as executor:
         print(f"Adding vectors to table for ANN index...")
         for i, batch in enumerate(executor.map(vectorize_text, chunked_data), 1):
+            print(f"Inserting batch {i} to {tbl.name} table")
             tbl.add(batch, mode="append")
-            print(f"Finished inserting batch {i} to {tbl.name} table")
 
 
 def main(tbl: Table, data: list[JsonBlob]) -> None:
