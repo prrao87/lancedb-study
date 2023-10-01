@@ -139,7 +139,6 @@ if __name__ == "__main__":
     FILENAME = args["filename"]
     CHUNKSIZE = args["chunksize"]
     WORKERS = args["workers"]
-    REFRESH = args["refresh"]
 
     data = list(get_json_data(DATA_DIR, FILENAME))
     assert data, "No data found in the specified file"
