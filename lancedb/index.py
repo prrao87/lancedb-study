@@ -104,7 +104,7 @@ def embed_batches(tbl: str, validated_data: list[JsonBlob]) -> Table:
 
 
 def main(tbl: Table, data: list[JsonBlob]) -> None:
-    """"""
+    """Generate sentence embeddings and create ANN and FTS indexes"""
     with Timer(name="Data validation in pydantic", text="Validated data using Pydantic in {:.4f} sec"):
         validated_data = validate(data, exclude_none=False)
 
