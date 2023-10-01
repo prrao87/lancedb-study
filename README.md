@@ -14,3 +14,4 @@ The aim of this repo is to go over the FTS and vector search features of LanceDB
 
 The dataset used for this demo is the [Wine Reviews](https://www.kaggle.com/zynicide/wine-reviews) dataset from Kaggle, containing ~130k reviews on wines along with other metadata. The dataset is converted to a ZIP archive, and the code for this as well as the ZIP data is provided here for reference.
 
+
