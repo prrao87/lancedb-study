@@ -163,4 +163,5 @@ cython_debug/
 #.idea/
 
 # local
+data/*.jsonl
 lancedb/winemag
