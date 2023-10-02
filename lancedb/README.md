@@ -1,6 +1,6 @@
 # LanceDB
 
-The Python API for LanceDB is used to ingest the data and build the index. The following scripts are run with arguments.
+The Python API for LanceDB is used to ingest the data and build the index.
 
 ## Embedding model selection
 
@@ -19,8 +19,9 @@ Alibaba General Text Embeddings | `thenlper/gte-small` | 384 | 512
 SentenceBERT | `sentence-transformers/all-MiniLM-L12-v2` | 384 | 256
 SentenceBERT | `sentence-transformers/all-MiniLM-L6-v2` | 384 | 256
 
-
 ### Ingest data and create FTS and ANN indexes
+
+The following scripts are run with arguments.
 
 ```sh
 # Build FTS and ANN index with 4 workers for generating embeddings
@@ -55,7 +56,8 @@ python query.py
 The full text search (via BM25 keyword matches) and vector search (via cosine similarity) results are shown below.
 
 ```
-Full-text search result: shape: (10, 17)
+Full-text search result
+shape: (10, 17)
 ┌────────┬────────┬───────────────────────────────────┬───────────────────────────────────┬───┬───────────────────────┬───────────────────────────────────┬───────────────────────────────────┬──────────┐
 │ id     ┆ points ┆ title                             ┆ description                       ┆ … ┆ taster_twitter_handle ┆ to_vectorize                      ┆ vector                            ┆ score    │
 │ ---    ┆ ---    ┆ ---                               ┆ ---                               ┆   ┆ ---                   ┆ ---                               ┆ ---                               ┆ ---      │
@@ -71,7 +73,8 @@ Full-text search result: shape: (10, 17)
 │ 128804 ┆ 85     ┆ Tenute Orestiadi 2016 Molino a V… ┆ Tropical fruit aromas meld with … ┆ … ┆ @kerinokeefe          ┆ Grillo Tenute Orestiadi 2016 Mol… ┆ [-0.011769, 0.060849, … 0.02716]  ┆ 5.320488 │
 │ 129690 ┆ 87     ┆ Passaggio 2011 New Generation Un… ┆ Vanilla cream, honey and tropica… ┆ … ┆ null                  ┆ Chardonnay Passaggio 2011 New Ge… ┆ [-0.013895, -0.014257, … 0.00822… ┆ 5.271303 │
 └────────┴────────┴───────────────────────────────────┴───────────────────────────────────┴───┴───────────────────────┴───────────────────────────────────┴───────────────────────────────────┴──────────┘
-Vector search result: shape: (10, 17)
+Vector search result
+shape: (10, 17)
 ┌────────┬────────┬───────────────────────────────────┬───────────────────────────────────┬───┬───────────────────────┬───────────────────────────────────┬───────────────────────────────────┬───────────┐
 │ id     ┆ points ┆ title                             ┆ description                       ┆ … ┆ taster_twitter_handle ┆ to_vectorize                      ┆ vector                            ┆ _distance │
 │ ---    ┆ ---    ┆ ---                               ┆ ---                               ┆   ┆ ---                   ┆ ---                               ┆ ---                               ┆ ---       │

@@ -14,4 +14,16 @@ The aim of this repo is to go over the full-text, SQL and vector search features
 
 The dataset used for this demo is the [Wine Reviews](https://www.kaggle.com/zynicide/wine-reviews) dataset from Kaggle, containing ~130k reviews on wines along with other metadata. The dataset is converted to a ZIP archive, and the code for this as well as the ZIP data is provided here for reference.
 
+## Setup
 
+Install the dependencies in virtual environment via `requirements.txt`.
+
+```sh
+# Setup the environment for the first time
+python -m venv .venv  # python -> python 3.10+
+
+# Activate the environment (for subsequent runs)
+source .venv/bin/activate
+
+python -m pip install -r requirements.txt
+```
