@@ -1,6 +1,6 @@
 # LanceDB
 
-The Python API for LanceDB is used to ingest the data and build the index. The following scripts are run with arguments.
+The Python API for LanceDB is used to ingest the data and build the index.
 
 ## Embedding model selection
 
@@ -19,8 +19,9 @@ Alibaba General Text Embeddings | `thenlper/gte-small` | 384 | 512
 SentenceBERT | `sentence-transformers/all-MiniLM-L12-v2` | 384 | 256
 SentenceBERT | `sentence-transformers/all-MiniLM-L6-v2` | 384 | 256
 
-
 ### Ingest data and create FTS and ANN indexes
+
+The following scripts are run with arguments.
 
 ```sh
 # Build FTS and ANN index with 4 workers for generating embeddings
