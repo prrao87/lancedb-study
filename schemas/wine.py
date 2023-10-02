@@ -64,6 +64,43 @@ class Wine(BaseModel):
         return values
 
 
+class ElasticModelWine(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        validate_assignment=True,
+        extra="allow",
+        str_strip_whitespace=True,
+    )
+
+    id: int
+    points: int
+    title: str
+    description: str | None
+    price: float | None
+    variety: str | None
+    winery: str | None
+    vineyard: str | None = Field(..., alias="designation")
+    country: str | None
+    province: str | None
+    region_1: str | None
+    region_2: str | None
+    taster_name: str | None
+    taster_twitter_handle: str | None
+
+    @model_validator(mode="before")
+    def _fill_country_unknowns(cls, values):
+        "Fill in missing country values with 'Unknown', as we always want this field to be queryable"
+        country = values.get("country")
+        if country is None or country == "null":
+            values["country"] = "Unknown"
+        return values
+
+    @model_validator(mode="before")
+    def _create_id(cls, values):
+        "Create an _id field because Elastic needs this to store as primary key"
+        values["_id"] = values["id"]
+        return values
+
 class LanceModelWine(BaseModel):
     """
     Pydantic model for LanceDB, with a vector field added for sentence embeddings
