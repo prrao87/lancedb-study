@@ -86,13 +86,6 @@ def vectorize_text(data: list[JsonBlob]) -> list[LanceModelWine] | None:
     return data_batch
 
 
-def ingest_batches(tbl: str, validated_data: list[JsonBlob]) -> Table:
-    """Ingest batches of data for full-text index"""
-    chunked_data = chunk_iterable(validated_data, CHUNKSIZE)
-    for i, chunk in enumerate(chunked_data, 1):
-        tbl.add(chunk, mode="append")
-
-
 def embed_batches(tbl: str, validated_data: list[JsonBlob]) -> Table:
     """Ingest embed vector batches of data via multi-processing for ANN index"""
     chunked_data = chunk_iterable(validated_data, CHUNKSIZE)
