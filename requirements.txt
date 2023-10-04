@@ -9,3 +9,4 @@ python-dotenv>=1.0.0
 srsly>=2.4.6
 polars~=0.19.0
 codetiming~=1.4.0
+rich~=13.6.0
