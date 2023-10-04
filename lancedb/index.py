@@ -13,6 +13,7 @@ from codetiming import Timer
 from dotenv import load_dotenv
 from lancedb.pydantic import pydantic_to_schema
 from lancedb.table import Table
+from rich import progress
 
 from config import Settings
 
@@ -89,16 +90,28 @@ def vectorize_text(data: list[JsonBlob]) -> list[LanceModelWine] | None:
 def embed_batches(tbl: str, validated_data: list[JsonBlob]) -> Table:
     """Ingest embed vector batches of data via multi-processing for ANN index"""
     chunked_data = chunk_iterable(validated_data, CHUNKSIZE)
-    with ProcessPoolExecutor(max_workers=WORKERS) as executor:
-        print(f"Adding vectors to table for ANN index...")
-        for i, batch in enumerate(executor.map(vectorize_text, chunked_data), 1):
-            print(f"Inserting batch {i} to {tbl.name} table")
-            tbl.add(batch, mode="append")
+    print(f"Adding vectors to table for ANN index...")
+    # Add rich progress bar
+    with progress.Progress(
+        "[progress.description]{task.description}",
+        progress.BarColumn(),
+        "[progress.percentage]{task.percentage:>3.0f}%",
+        progress.TimeElapsedColumn(),
+    ) as prog:
+        overall_progress_task = prog.add_task(
+            "Starting vectorization...", total=len(validated_data) // CHUNKSIZE
+        )
+        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+            for batch in executor.map(vectorize_text, chunked_data):
+                prog.update(overall_progress_task, advance=1)
+                tbl.add(batch, mode="append")
 
 
 def main(tbl: Table, data: list[JsonBlob]) -> None:
     """Generate sentence embeddings and create ANN and FTS indexes"""
-    with Timer(name="Data validation in pydantic", text="Validated data using Pydantic in {:.4f} sec"):
+    with Timer(
+        name="Data validation in pydantic", text="Validated data using Pydantic in {:.4f} sec"
+    ):
         validated_data = validate(data, exclude_none=False)
 
     with Timer(name="Insert vectors in batches", text="Created sentence embeddings in {:.4f} sec"):
