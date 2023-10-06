@@ -85,3 +85,29 @@ class LanceModelWine(BaseModel):
     taster_twitter_handle: Optional[str]
     to_vectorize: str
     vector: Vector(384)
+
+
+class SimilaritySearch(BaseModel):
+    model_config = ConfigDict(
+        extra="ignore",
+        json_schema_extra={
+            "example": {
+                "wineID": 3845,
+                "country": "Italy",
+                "title": "Castellinuzza e Piuca 2010  Chianti Classico",
+                "description": "This gorgeous Chianti Classico boasts lively cherry, strawberry and violet aromas. The mouthwatering palate shows concentrated wild-cherry flavor layered with mint, white pepper and clove. It has fresh acidity and firm tannins that will develop complexity with more bottle age. A textbook Chianti Classico.",
+                "points": 93,
+                "price": 16,
+                "variety": "Red Blend",
+                "winery": "Castellinuzza e Piuca",
+            }
+        },
+    )
+
+    id: int
+    title: str
+    description: Optional[str]
+    country: Optional[str]
+    variety: Optional[str]
+    price: Optional[float]
+    points: Optional[int]
