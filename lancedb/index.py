@@ -1,25 +1,22 @@
 import argparse
 import os
 import shutil
-import sys
 from concurrent.futures import ProcessPoolExecutor
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterator
 
-import lancedb
 import srsly
 from codetiming import Timer
-from dotenv import load_dotenv
-from lancedb.pydantic import pydantic_to_schema
-from lancedb.table import Table
-from rich import progress
-
 from config import Settings
-
-sys.path.insert(1, os.path.realpath(Path(__file__).resolve().parents[1]))
+from dotenv import load_dotenv
+from rich import progress
 from schemas.wine import LanceModelWine, Wine
 from sentence_transformers import SentenceTransformer
+
+import lancedb
+from lancedb.pydantic import pydantic_to_schema
+from lancedb.table import Table
 
 load_dotenv()
 # Custom types

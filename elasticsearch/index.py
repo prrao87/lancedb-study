@@ -1,7 +1,5 @@
 import argparse
 import asyncio
-import os
-import sys
 import warnings
 from functools import lru_cache
 from pathlib import Path
@@ -9,13 +7,11 @@ from typing import Any, Iterator
 
 import srsly
 from codetiming import Timer
-from dotenv import load_dotenv
-from elasticsearch import AsyncElasticsearch, helpers
-
 from config import Settings
-
-sys.path.insert(1, os.path.realpath(Path(__file__).resolve().parents[1]))
+from dotenv import load_dotenv
 from schemas.wine import ElasticModelWine
+
+from elasticsearch import AsyncElasticsearch, helpers
 
 load_dotenv()
 # Custom types

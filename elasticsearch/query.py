@@ -1,8 +1,9 @@
 from typing import Any
-import polars as pl
-from elasticsearch import AsyncElasticsearch
 
+import polars as pl
 from config import Settings
+
+from elasticsearch import AsyncElasticsearch
 
 # Custom types
 JsonBlob = dict[str, Any]
@@ -64,6 +65,7 @@ async def main():
     fts_result = await fts_search(client, query)
     # Close client
     await client.close()
+
 
 if __name__ == "__main__":
     import asyncio
