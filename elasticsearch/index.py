@@ -9,7 +9,7 @@ import srsly
 from codetiming import Timer
 from config import Settings
 from dotenv import load_dotenv
-from schemas.wine import ElasticModelWine
+from schemas.wine import Wine
 
 from elasticsearch import AsyncElasticsearch, helpers
 
@@ -58,7 +58,7 @@ def validate(
     exclude_none: bool = False,
 ) -> list[JsonBlob]:
     validated_data = [
-        ElasticModelWine(**item).model_dump(exclude_none=exclude_none) for item in data
+        Wine(**item).model_dump(exclude_none=exclude_none) for item in data
     ]
     return validated_data
 
