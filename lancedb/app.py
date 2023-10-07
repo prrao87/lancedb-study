@@ -4,13 +4,14 @@ FastAPI app to serve search endpoints
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from functools import lru_cache
+from queue import Full
 
 import lancedb
 from fastapi import FastAPI, HTTPException, Query, Request
 from sentence_transformers import SentenceTransformer
 
 from config import Settings
-from schemas.wine import SimilaritySearch
+from schemas.wine import FullTextSearchModel, SimilaritySearchModel
 
 model_type = "sbert"
 NUM_PROBES = 20
@@ -47,24 +48,42 @@ app = FastAPI(
 )
 
 
-def _search_by_similarity(
+def _fts_search(request: Request, terms: str) -> None:
+    # In FTS, we limit to a max of 10K points to be more in line with Elasticsearch
+    res = (
+        request.app.table.search(terms, vector_column_name="to_vectorize")
+        .select(["id", "points", "title", "description", "country", "price", "variety"])
+        .limit(10000)
+    )
+    tbl = res.to_df().head(5).to_dict(orient="records")
+    if not tbl:
+        return None
+    return tbl
+
+
+def _similarity_search(
     request: Request,
     terms: str,
-) -> list[SimilaritySearch] | None:
+) -> list[SimilaritySearchModel] | None:
     query_vector = request.app.model.encode(terms.lower())
     search_result = (
-        request.app.table.search(query_vector)
-        .metric("cosine")
-        .nprobes(NUM_PROBES)
-        .select(["id", "points", "title", "description", "country", "price", "variety"])
-        .limit(5)
-    ).to_df().to_dict(orient="records")
+        (
+            request.app.table.search(query_vector)
+            .metric("cosine")
+            .nprobes(NUM_PROBES)
+            .select(["id", "points", "title", "description", "country", "price", "variety"])
+            .limit(5)
+        )
+        .to_df()
+        .to_dict(orient="records")
+    )
     if not search_result:
         return None
     return search_result
 
 
 # --- app ---
+
 
 @app.get("/", include_in_schema=False)
 async def root():
@@ -74,17 +93,37 @@ async def root():
 
 
 @app.get(
-    "/search",
-    response_model=list[SimilaritySearch],
-    response_description="Search for wines via semantically similar terms",
+    "/fts_search",
+    response_model=list[FullTextSearchModel],
+    response_description="Search for wines via full-text keywords",
 )
-def search_by_similarity(
+def fts_search(
     request: Request,
     terms: str = Query(
         description="Specify terms to search for in the variety, title and description"
     ),
-) -> list[SimilaritySearch] | None:
-    result = _search_by_similarity(request, terms)
+) -> list[FullTextSearchModel] | None:
+    result = _fts_search(request, terms)
+    if not result:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No wine with the provided terms '{terms}' found in database - please try again",
+        )
+    return result
+
+
+@app.get(
+    "/similarity_search",
+    response_model=list[SimilaritySearchModel],
+    response_description="Search for wines via semantically similar terms",
+)
+def similarity_search(
+    request: Request,
+    terms: str = Query(
+        description="Specify terms to search for in the variety, title and description"
+    ),
+) -> list[SimilaritySearchModel] | None:
+    result = _similarity_search(request, terms)
     if not result:
         raise HTTPException(
             status_code=404,
