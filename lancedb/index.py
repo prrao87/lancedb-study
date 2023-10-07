@@ -1,7 +1,6 @@
 import argparse
 import os
 import shutil
-import sys
 from concurrent.futures import ProcessPoolExecutor
 from functools import lru_cache
 from pathlib import Path
@@ -14,12 +13,10 @@ from dotenv import load_dotenv
 from lancedb.pydantic import pydantic_to_schema
 from lancedb.table import Table
 from rich import progress
+from sentence_transformers import SentenceTransformer
 
 from config import Settings
-
-sys.path.insert(1, os.path.realpath(Path(__file__).resolve().parents[1]))
 from schemas.wine import LanceModelWine, Wine
-from sentence_transformers import SentenceTransformer
 
 load_dotenv()
 # Custom types
