@@ -1,10 +1,10 @@
 """
 FastAPI app to serve search endpoints
 """
+import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from functools import lru_cache
-from queue import Full
+from functools import lru_cache, partial
 
 import lancedb
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -97,13 +97,15 @@ async def root():
     response_model=list[FullTextSearchModel],
     response_description="Search for wines via full-text keywords",
 )
-def fts_search(
+async def fts_search(
     request: Request,
     terms: str = Query(
         description="Specify terms to search for in the variety, title and description"
     ),
 ) -> list[FullTextSearchModel] | None:
-    result = _fts_search(request, terms)
+    loop = asyncio.get_running_loop()
+    result = await loop.run_in_executor(None, partial(_fts_search, request, terms))
+
     if not result:
         raise HTTPException(
             status_code=404,
@@ -117,13 +119,14 @@ def fts_search(
     response_model=list[SimilaritySearchModel],
     response_description="Search for wines via semantically similar terms",
 )
-def similarity_search(
+async def similarity_search(
     request: Request,
     terms: str = Query(
         description="Specify terms to search for in the variety, title and description"
     ),
 ) -> list[SimilaritySearchModel] | None:
-    result = _similarity_search(request, terms)
+    loop = asyncio.get_running_loop()
+    result = await loop.run_in_executor(None, partial(_similarity_search, request, terms))
     if not result:
         raise HTTPException(
             status_code=404,
