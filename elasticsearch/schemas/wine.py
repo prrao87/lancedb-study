@@ -2,6 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+
 class Wine(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
