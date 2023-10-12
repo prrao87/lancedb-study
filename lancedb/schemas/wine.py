@@ -1,7 +1,8 @@
 from typing import Optional
 
-from lancedb.pydantic import Vector
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from lancedb.pydantic import Vector, LanceModel
 
 
 class Wine(BaseModel):
@@ -112,27 +113,11 @@ class FullTextSearchModel(BaseModel):
     points: Optional[int]
 
 
-class SimilaritySearchModel(BaseModel):
-    model_config = ConfigDict(
-        extra="ignore",
-        json_schema_extra={
-            "example": {
-                "wineID": 3845,
-                "country": "Italy",
-                "title": "Castellinuzza e Piuca 2010  Chianti Classico",
-                "description": "This gorgeous Chianti Classico boasts lively cherry, strawberry and violet aromas. The mouthwatering palate shows concentrated wild-cherry flavor layered with mint, white pepper and clove. It has fresh acidity and firm tannins that will develop complexity with more bottle age. A textbook Chianti Classico.",
-                "points": 93,
-                "price": 16,
-                "variety": "Red Blend",
-                "winery": "Castellinuzza e Piuca",
-            }
-        },
-    )
-
+class SimilaritySearchModel(LanceModel):
     id: int
     title: str
     description: Optional[str]
     country: Optional[str]
     variety: Optional[str]
-    price: Optional[float]
     points: Optional[int]
+    price: Optional[float]

@@ -6,11 +6,11 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from functools import lru_cache
 
-from elasticsearch import AsyncElasticsearch
-from fastapi import FastAPI, HTTPException, Query, Request
-
 from config import Settings
+from fastapi import FastAPI, HTTPException, Query, Request
 from schemas.wine import FullTextSearchModel
+
+from elasticsearch import AsyncElasticsearch
 
 
 @lru_cache()
