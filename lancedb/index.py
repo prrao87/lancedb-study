@@ -6,17 +6,17 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterator
 
-import lancedb
 import srsly
 from codetiming import Timer
+from config import Settings
 from dotenv import load_dotenv
-from lancedb.pydantic import pydantic_to_schema
-from lancedb.table import Table
 from rich import progress
+from schemas.wine import LanceModelWine, Wine
 from sentence_transformers import SentenceTransformer
 
-from config import Settings
-from schemas.wine import LanceModelWine, Wine
+import lancedb
+from lancedb.pydantic import pydantic_to_schema
+from lancedb.table import Table
 
 load_dotenv()
 # Custom types

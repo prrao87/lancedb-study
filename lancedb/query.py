@@ -1,8 +1,8 @@
-import lancedb
 import polars as pl
+from config import Settings
 from sentence_transformers import SentenceTransformer
 
-from config import Settings
+import lancedb
 
 
 def embed_func(text: str, model) -> list[float]:
@@ -16,8 +16,7 @@ def fts(query: str) -> None:
         tbl.search(query, vector_column_name="to_vectorize")
         .select(["id", "title", "description", "points", "price"])
         .limit(10000)
-        .to_arrow()
-    )
+    ).to_arrow()
     df = pl.from_arrow(res).sort("points", descending=True).limit(10)
     # fmt: on
     print(f"Full-text search result\n{df}")
@@ -32,8 +31,7 @@ def vector_search(query: str) -> None:
         .nprobes(NUM_PROBES)
         .select(["id", "title", "description", "points", "price"])
         .limit(10)
-        .to_arrow()
-    )
+    ).to_arrow()
     df = pl.from_arrow(res).sort("points", descending=True).limit(10)
     # fmt: on
     print(f"Vector search result\n{df}")
