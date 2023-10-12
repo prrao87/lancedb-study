@@ -6,12 +6,12 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from functools import lru_cache, partial
 
-import lancedb
+from config import Settings
 from fastapi import FastAPI, HTTPException, Query, Request
+from schemas.wine import FullTextSearchModel, SimilaritySearchModel
 from sentence_transformers import SentenceTransformer
 
-from config import Settings
-from schemas.wine import FullTextSearchModel, SimilaritySearchModel
+import lancedb
 
 model_type = "sbert"
 NUM_PROBES = 20
@@ -48,17 +48,16 @@ app = FastAPI(
 )
 
 
-def _fts_search(request: Request, terms: str) -> None:
+def _fts_search(request: Request, terms: str) -> list[SimilaritySearchModel] | None:
     # In FTS, we limit to a max of 10K points to be more in line with Elasticsearch
-    res = (
+    search_result = (
         request.app.table.search(terms, vector_column_name="to_vectorize")
         .select(["id", "points", "title", "description", "country", "price", "variety"])
         .limit(10000)
-    )
-    tbl = res.to_df().head(5).to_dict(orient="records")
-    if not tbl:
+    ).to_pydantic(SimilaritySearchModel)
+    if not search_result:
         return None
-    return tbl
+    return search_result
 
 
 def _similarity_search(
@@ -67,16 +66,13 @@ def _similarity_search(
 ) -> list[SimilaritySearchModel] | None:
     query_vector = request.app.model.encode(terms.lower())
     search_result = (
-        (
-            request.app.table.search(query_vector)
-            .metric("cosine")
-            .nprobes(NUM_PROBES)
-            .select(["id", "points", "title", "description", "country", "price", "variety"])
-            .limit(5)
-        )
-        .to_df()
-        .to_dict(orient="records")
-    )
+        request.app.table.search(query_vector)
+        .metric("cosine")
+        .nprobes(NUM_PROBES)
+        .select(["id", "points", "title", "description", "country", "price", "variety"])
+        .limit(5)
+    ).to_pydantic(SimilaritySearchModel)
+
     if not search_result:
         return None
     return search_result
