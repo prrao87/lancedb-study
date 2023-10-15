@@ -14,6 +14,10 @@ The aim of this repo is to go over the full-text, SQL and vector search features
 
 The dataset used for this demo is the [Wine Reviews](https://www.kaggle.com/zynicide/wine-reviews) dataset from Kaggle, containing ~130k reviews on wines along with other metadata. The dataset is converted to a ZIP archive, and the code for this as well as the ZIP data is provided here for reference.
 
+## Comparison
+
+Studying performance of any tool in isolation is a challenge, so for the sake of comparison, an [Elasticsearch](https://github.com/elastic/elasticsearch) workflow is provided in this repo. Elasticsearch is a popular search engine that supports full-text search and vector search via Lucene.
+
 ## Setup
 
 Install the dependencies in virtual environment via `requirements.txt`.
