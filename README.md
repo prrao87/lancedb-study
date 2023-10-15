@@ -16,7 +16,7 @@ The dataset used for this demo is the [Wine Reviews](https://www.kaggle.com/zyni
 
 ## Comparison
 
-Studying performance of any tool in isolation is a challenge, so for the sake of comparison, an [Elasticsearch](https://github.com/elastic/elasticsearch) workflow is provided in this repo. Elasticsearch is a popular search engine that supports full-text search and vector search via Lucene.
+Studying performance of any tool in isolation is a challenge, so for the sake of comparison, an Elasticsearch workflow is provided in this repo. [Elasticsearch](https://github.com/elastic/elasticsearch) is a popular search engine that supports full-text search and vector search via Lucene.
 
 ## Setup
 
