@@ -1,8 +1,8 @@
+import lancedb
 import polars as pl
-from config import Settings
 from sentence_transformers import SentenceTransformer
 
-import lancedb
+from config import Settings
 
 
 def embed_func(text: str, model) -> list[float]:

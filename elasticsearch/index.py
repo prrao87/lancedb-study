@@ -31,7 +31,9 @@ def get_settings():
     return Settings()
 
 
-def chunk_iterable(item_list: list[JsonBlob], chunksize: int) -> Iterator[tuple[JsonBlob, ...]]:
+def chunk_iterable(
+    item_list: list[JsonBlob], chunksize: int
+) -> Iterator[tuple[JsonBlob, ...]]:
     """
     Break a large iterable into an iterable of smaller iterables of size `chunksize`
     """
@@ -84,7 +86,9 @@ async def get_elastic_client(settings) -> AsyncElasticsearch:
     return elastic_client
 
 
-async def create_index(client: AsyncElasticsearch, index: str, mappings_path: Path) -> None:
+async def create_index(
+    client: AsyncElasticsearch, index: str, mappings_path: Path
+) -> None:
     """Create an index associated with an alias in ElasticSearch"""
     elastic_config = dict(srsly.read_json(mappings_path))
     assert elastic_config is not None
@@ -99,14 +103,18 @@ async def create_index(client: AsyncElasticsearch, index: str, mappings_path: Pa
             settings = elastic_config.get("settings")
             index_name = f"{index}-1"
             try:
-                await client.indices.create(index=index_name, mappings=mappings, settings=settings)
+                await client.indices.create(
+                    index=index_name, mappings=mappings, settings=settings
+                )
                 await client.indices.put_alias(index=index_name, name=INDEX_ALIAS)
                 # Verify that the new index has been created
                 assert await client.indices.exists(index=index_name)
                 index_and_alias = await client.indices.get_alias(index=index_name)
                 print(index_and_alias)
             except Exception as e:
-                print(f"Warning: Did not create index {index_name} due to exception {e}\n")
+                print(
+                    f"Warning: Did not create index {index_name} due to exception {e}\n"
+                )
     else:
         print(f"Found index {index} in db, skipping index creation...\n")
 

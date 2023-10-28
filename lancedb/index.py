@@ -6,17 +6,17 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterator
 
+import lancedb
 import srsly
 from codetiming import Timer
-from config import Settings
 from dotenv import load_dotenv
-from rich import progress
-from schemas.wine import LanceModelWine, Wine
-from sentence_transformers import SentenceTransformer
-
-import lancedb
 from lancedb.pydantic import pydantic_to_schema
 from lancedb.table import Table
+from rich import progress
+from sentence_transformers import SentenceTransformer
+
+from config import Settings
+from schemas.wine import LanceModelWine, Wine
 
 load_dotenv()
 # Custom types
@@ -33,7 +33,9 @@ def get_settings():
     return Settings()
 
 
-def chunk_iterable(item_list: list[JsonBlob], chunksize: int) -> Iterator[list[JsonBlob]]:
+def chunk_iterable(
+    item_list: list[JsonBlob], chunksize: int
+) -> Iterator[list[JsonBlob]]:
     """
     Break a large iterable into an iterable of smaller iterables of size `chunksize`
     """
@@ -59,7 +61,9 @@ def validate(
     data: list[JsonBlob],
     exclude_none: bool = False,
 ) -> list[JsonBlob]:
-    validated_data = [Wine(**item).model_dump(exclude_none=exclude_none) for item in data]
+    validated_data = [
+        Wine(**item).model_dump(exclude_none=exclude_none) for item in data
+    ]
     return validated_data
 
 
@@ -107,11 +111,15 @@ def embed_batches(tbl: str, validated_data: list[JsonBlob]) -> Table:
 def main(tbl: Table, data: list[JsonBlob]) -> None:
     """Generate sentence embeddings and create ANN and FTS indexes"""
     with Timer(
-        name="Data validation in pydantic", text="Validated data using Pydantic in {:.4f} sec"
+        name="Data validation in pydantic",
+        text="Validated data using Pydantic in {:.4f} sec",
     ):
         validated_data = validate(data, exclude_none=False)
 
-    with Timer(name="Insert vectors in batches", text="Created sentence embeddings in {:.4f} sec"):
+    with Timer(
+        name="Insert vectors in batches",
+        text="Created sentence embeddings in {:.4f} sec",
+    ):
         embed_batches(tbl, validated_data)
         print(f"Finished inserting {len(tbl)} vectors into LanceDB table")
 
@@ -154,7 +162,9 @@ if __name__ == "__main__":
 
     db = lancedb.connect(DB_NAME)
     try:
-        tbl = db.create_table(TABLE, schema=pydantic_to_schema(LanceModelWine), mode="create")
+        tbl = db.create_table(
+            TABLE, schema=pydantic_to_schema(LanceModelWine), mode="create"
+        )
     except OSError:
         tbl = db.open_table(TABLE)
 

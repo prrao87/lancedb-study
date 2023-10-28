@@ -87,6 +87,7 @@ async def _fts_search(client: AsyncElasticsearch, keywords: str) -> None:
 
 # --- app ---
 
+
 @app.get("/", include_in_schema=False)
 async def root():
     return {
