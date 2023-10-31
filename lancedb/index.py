@@ -1,22 +1,21 @@
 import argparse
 import os
 import shutil
-from concurrent.futures import ProcessPoolExecutor
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterator
 
-import lancedb
 import srsly
 from codetiming import Timer
+from config import Settings
 from dotenv import load_dotenv
-from lancedb.pydantic import pydantic_to_schema
-from lancedb.table import Table
 from rich import progress
+from schemas.wine import LanceModelWine, Wine
 from sentence_transformers import SentenceTransformer
 
-from config import Settings
-from schemas.wine import LanceModelWine, Wine
+import lancedb
+from lancedb.pydantic import pydantic_to_schema
+from lancedb.table import Table
 
 load_dotenv()
 # Custom types
@@ -33,9 +32,7 @@ def get_settings():
     return Settings()
 
 
-def chunk_iterable(
-    item_list: list[JsonBlob], chunksize: int
-) -> Iterator[list[JsonBlob]]:
+def chunk_iterable(item_list: list[JsonBlob], chunksize: int) -> Iterator[list[JsonBlob]]:
     """
     Break a large iterable into an iterable of smaller iterables of size `chunksize`
     """
@@ -61,9 +58,7 @@ def validate(
     data: list[JsonBlob],
     exclude_none: bool = False,
 ) -> list[JsonBlob]:
-    validated_data = [
-        Wine(**item).model_dump(exclude_none=exclude_none) for item in data
-    ]
+    validated_data = [Wine(**item).model_dump(exclude_none=exclude_none) for item in data]
     return validated_data
 
 
@@ -102,10 +97,10 @@ def embed_batches(tbl: str, validated_data: list[JsonBlob]) -> Table:
         overall_progress_task = prog.add_task(
             "Starting vectorization...", total=len(validated_data) // CHUNKSIZE
         )
-        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
-            for batch in executor.map(vectorize_text, chunked_data):
-                prog.update(overall_progress_task, advance=1)
-                tbl.add(batch, mode="append")
+        for chunk in chunked_data:
+            batch = vectorize_text(chunk)
+            prog.update(overall_progress_task, advance=1)
+            tbl.add(batch, mode="append")
 
 
 def main(tbl: Table, data: list[JsonBlob]) -> None:
@@ -162,9 +157,7 @@ if __name__ == "__main__":
 
     db = lancedb.connect(DB_NAME)
     try:
-        tbl = db.create_table(
-            TABLE, schema=pydantic_to_schema(LanceModelWine), mode="create"
-        )
+        tbl = db.create_table(TABLE, schema=pydantic_to_schema(LanceModelWine), mode="create")
     except OSError:
         tbl = db.open_table(TABLE)
 

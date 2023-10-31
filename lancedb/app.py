@@ -6,12 +6,12 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from functools import lru_cache, partial
 
-import lancedb
+from config import Settings
 from fastapi import FastAPI, HTTPException, Query, Request
+from schemas.wine import FullTextSearchModel, SimilaritySearchModel
 from sentence_transformers import SentenceTransformer
 
-from config import Settings
-from schemas.wine import FullTextSearchModel, SimilaritySearchModel
+import lancedb
 
 model_type = "sbert"
 NUM_PROBES = 20
@@ -122,9 +122,7 @@ async def similarity_search(
     ),
 ) -> list[SimilaritySearchModel] | None:
     loop = asyncio.get_running_loop()
-    result = await loop.run_in_executor(
-        None, partial(_similarity_search, request, terms)
-    )
+    result = await loop.run_in_executor(None, partial(_similarity_search, request, terms))
     if not result:
         raise HTTPException(
             status_code=404,

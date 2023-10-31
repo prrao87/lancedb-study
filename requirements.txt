@@ -1,4 +1,5 @@
 lancedb~=0.3.0
+tantivy~=0.20.0
 elasticsearch~=8.10.0
 aiohttp~=3.8.0
 transformers~=4.33.0

@@ -1,7 +1,8 @@
 from typing import Optional
 
-from lancedb.pydantic import LanceModel, Vector
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from lancedb.pydantic import LanceModel, Vector
 
 
 class Wine(BaseModel):
