@@ -40,6 +40,16 @@ class Wine(BaseModel):
         values["_id"] = values["id"]
         return values
 
+    @model_validator(mode="before")
+    def _add_to_vectorize_fields(cls, values):
+        "Add a field to_vectorize that will be used to create sentence embeddings"
+        variety = values.get("variety", "")
+        title = values.get("title", "")
+        description = values.get("description", "")
+        to_vectorize = list(filter(None, [variety, title, description]))
+        values["to_vectorize"] = " ".join(to_vectorize).strip()
+        return values
+
 
 class FullTextSearchModel(BaseModel):
     model_config = ConfigDict(
