@@ -110,7 +110,6 @@ def add_vectors_to_index(data_chunk: tuple[JsonBlob, ...], index: str) -> None:
     assert model_id, "Invalid embedding model checkpoint specified in .env file"
     MODEL = SentenceTransformer(model_id)
 
-    ids = [item["id"] for item in data_chunk]
     to_vectorize = [text.pop("to_vectorize") for text in data_chunk]
     vectors = [list(MODEL.encode(sentence.lower())) for sentence in to_vectorize]
     data_batch = [{**d, "vector": vector} for d, vector in zip(data_chunk, vectors)]
