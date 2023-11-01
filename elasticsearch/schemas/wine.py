@@ -40,24 +40,19 @@ class Wine(BaseModel):
         values["_id"] = values["id"]
         return values
 
+    @model_validator(mode="before")
+    def _add_to_vectorize_fields(cls, values):
+        "Add a field to_vectorize that will be used to create sentence embeddings"
+        variety = values.get("variety", "")
+        title = values.get("title", "")
+        description = values.get("description", "")
+        to_vectorize = list(filter(None, [variety, title, description]))
+        values["to_vectorize"] = " ".join(to_vectorize).strip()
+        return values
 
-class FullTextSearchModel(BaseModel):
-    model_config = ConfigDict(
-        extra="ignore",
-        json_schema_extra={
-            "example": {
-                "wineID": 3845,
-                "country": "Italy",
-                "title": "Castellinuzza e Piuca 2010  Chianti Classico",
-                "description": "This gorgeous Chianti Classico boasts lively cherry, strawberry and violet aromas. The mouthwatering palate shows concentrated wild-cherry flavor layered with mint, white pepper and clove. It has fresh acidity and firm tannins that will develop complexity with more bottle age. A textbook Chianti Classico.",
-                "points": 93,
-                "price": 16,
-                "variety": "Red Blend",
-                "winery": "Castellinuzza e Piuca",
-            }
-        },
-    )
 
+class SearchResult(BaseModel):
+    "Model to return search results"
     id: int
     title: str
     description: Optional[str]

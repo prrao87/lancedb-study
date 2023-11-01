@@ -6,6 +6,5 @@ class Settings(BaseSettings):
         env_file=".env",
         extra="allow",
     )
-
     lancedb_dir: str
     embedding_model_checkpoint: str

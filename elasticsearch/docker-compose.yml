@@ -12,8 +12,6 @@ services:
       - eslogs:/usr/share/elasticsearch/logs
     ports:
       - ${ELASTIC_PORT}:9200
-    networks:
-      - wine
 
   kibana:
     image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
@@ -21,32 +19,10 @@ services:
       - kibanadata:/usr/share/kibana/data
     ports:
       - ${KIBANA_PORT}:5601
-    networks:
-      - wine
     depends_on:
       - elasticsearch
-  
-  fastapi:
-    image: elastic_wine_fastapi:${TAG}
-    build: .
-    restart: unless-stopped
-    env_file:
-      - .env
-    ports:
-      - ${API_PORT}:8000
-    depends_on:
-      - elasticsearch
-    volumes:
-      - ./:/wine
-    networks:
-      - wine
-    command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 
 volumes:
   esdata:
   eslogs:
   kibanadata:
-
-networks:
-  wine:
-    driver: bridge

@@ -1,7 +1,6 @@
 import argparse
 import os
 import shutil
-from concurrent.futures import ProcessPoolExecutor
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterator
@@ -98,20 +97,24 @@ def embed_batches(tbl: str, validated_data: list[JsonBlob]) -> Table:
         overall_progress_task = prog.add_task(
             "Starting vectorization...", total=len(validated_data) // CHUNKSIZE
         )
-        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
-            for batch in executor.map(vectorize_text, chunked_data):
-                prog.update(overall_progress_task, advance=1)
-                tbl.add(batch, mode="append")
+        for chunk in chunked_data:
+            batch = vectorize_text(chunk)
+            prog.update(overall_progress_task, advance=1)
+            tbl.add(batch, mode="append")
 
 
 def main(tbl: Table, data: list[JsonBlob]) -> None:
     """Generate sentence embeddings and create ANN and FTS indexes"""
     with Timer(
-        name="Data validation in pydantic", text="Validated data using Pydantic in {:.4f} sec"
+        name="Data validation in pydantic",
+        text="Validated data using Pydantic in {:.4f} sec",
     ):
         validated_data = validate(data, exclude_none=False)
 
-    with Timer(name="Insert vectors in batches", text="Created sentence embeddings in {:.4f} sec"):
+    with Timer(
+        name="Insert vectors in batches",
+        text="Created sentence embeddings in {:.4f} sec",
+    ):
         embed_batches(tbl, validated_data)
         print(f"Finished inserting {len(tbl)} vectors into LanceDB table")
 

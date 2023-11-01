@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from lancedb.pydantic import Vector, LanceModel
+from lancedb.pydantic import LanceModel, Vector
 
 
 class Wine(BaseModel):
@@ -69,6 +69,7 @@ class LanceModelWine(BaseModel):
     """
     Pydantic model for LanceDB, with a vector field added for sentence embeddings
     """
+
     id: int
     points: int
     title: str
