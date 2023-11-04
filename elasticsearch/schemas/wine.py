@@ -53,6 +53,7 @@ class Wine(BaseModel):
 
 class SearchResult(BaseModel):
     "Model to return search results"
+
     id: int
     title: str
     description: Optional[str]
