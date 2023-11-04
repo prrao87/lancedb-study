@@ -123,7 +123,7 @@ def main(tbl: Table, data: list[JsonBlob]) -> None:
         # Creating IVF-PQ index for now, as we eagerly await DiskANN
         # Choose num partitions as a power of 2 that's closest to len(dataset) // 5000
         # In this case, we have 130k datapoints, so the nearest power of 2 is 130000//5000 ~ 32)
-        tbl.create_index(metric="cosine", num_partitions=32, num_sub_vectors=96)
+        tbl.create_index(metric="cosine", num_partitions=4, num_sub_vectors=32)
 
     with Timer(name="Create FTS index", text="Created FTS index in {:.4f} sec"):
         # Create a full-text search index via Tantivy (which implements Lucene + BM25 in Rust)

@@ -8,3 +8,5 @@ class Settings(BaseSettings):
     )
     lancedb_dir: str
     embedding_model_checkpoint: str
+    api_port: int
+    tag: str
