@@ -5,11 +5,7 @@ from sentence_transformers import SentenceTransformer
 import lancedb
 
 
-def embed_func(text: str, model) -> list[float]:
-    return model.encode(text.lower())
-
-
-def fts(query: str) -> None:
+def fts_search(query: str) -> None:
     # In FTS, we limit to a max of 10K points to be more in line with Elasticsearch
     # fmt: off
     res = (
@@ -23,7 +19,7 @@ def fts(query: str) -> None:
 
 
 def vector_search(query: str) -> None:
-    query_vector = embed_func(query, MODEL)
+    query_vector = MODEL.encode(query.lower())
     # fmt: off
     res = (
         tbl.search(query_vector)
@@ -39,7 +35,7 @@ def vector_search(query: str) -> None:
 
 def main() -> None:
     query = "tropical fruit"
-    fts(query)
+    fts_search(query)
     vector_search(query)
 
 

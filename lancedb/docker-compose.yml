@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  fastapi:
+    image: lancedb_wine:${TAG}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - ${API_PORT}:8000
+    environment:
+      - LANCEDB_CONFIG_DIR=/wine
+    command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload

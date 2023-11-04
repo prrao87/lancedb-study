@@ -16,7 +16,7 @@ The dataset used for this demo is the [Wine Reviews](https://www.kaggle.com/zyni
 
 ## Comparison
 
-Studying the performance of any tool in isolation is a challenge, so for the sake of comparison, an Elasticsearch workflow is provided in this repo. [Elasticsearch](https://github.com/elastic/elasticsearch) is a popular search engine that supports full-text search and vector search via Lucene.
+Studying the performance of any tool in isolation is a challenge, so for the sake of comparison, an Elasticsearch workflow is provided in this repo. [Elasticsearch](https://github.com/elastic/elasticsearch) is a popular Lucene-based full-text and vector search engine, so this is a meaningful comparison.
 
 ## Setup
 
@@ -24,7 +24,7 @@ Install the dependencies in virtual environment via `requirements.txt`.
 
 ```sh
 # Setup the environment for the first time
-python -m venv .venv  # python -> python 3.10+
+python -m venv .venv  # python -> python 3.11+
 
 # Activate the environment (for subsequent runs)
 source .venv/bin/activate

@@ -123,7 +123,7 @@ def main(tbl: Table, data: list[JsonBlob]) -> None:
         # Creating IVF-PQ index for now, as we eagerly await DiskANN
         # Choose num partitions as a power of 2 that's closest to len(dataset) // 5000
         # In this case, we have 130k datapoints, so the nearest power of 2 is 130000//5000 ~ 32)
-        tbl.create_index(metric="cosine", num_partitions=32, num_sub_vectors=96)
+        tbl.create_index(metric="cosine", num_partitions=4, num_sub_vectors=32)
 
     with Timer(name="Create FTS index", text="Created FTS index in {:.4f} sec"):
         # Create a full-text search index via Tantivy (which implements Lucene + BM25 in Rust)
@@ -136,7 +136,6 @@ if __name__ == "__main__":
     parser.add_argument("--limit", "-l", type=int, default=0, help="Limit the size of the dataset to load for testing purposes")
     parser.add_argument("--chunksize", type=int, default=1000, help="Size of each chunk to break the dataset into before processing")
     parser.add_argument("--filename", type=str, default="winemag-data-130k-v2.jsonl.gz", help="Name of the JSONL zip file to use")
-    parser.add_argument("--workers", type=int, default=4, help="Number of workers to use for vectorization")
     args = vars(parser.parse_args())
     # fmt: on
 
@@ -144,7 +143,6 @@ if __name__ == "__main__":
     DATA_DIR = Path(__file__).parents[1] / "data"
     FILENAME = args["filename"]
     CHUNKSIZE = args["chunksize"]
-    WORKERS = args["workers"]
 
     data = list(get_json_data(DATA_DIR, FILENAME))
     assert data, "No data found in the specified file"

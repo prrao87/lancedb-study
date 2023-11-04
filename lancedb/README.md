@@ -6,7 +6,7 @@ The Python API for LanceDB is used to ingest the data and build the index.
 
 The Hugging Face [model hub](https://huggingface.co/models) is a good starting point to learn which embedding models are available, including their names and how to access them. For ease of use, the `sentence-transformers` library is used in this repo to expose the embedding models to LanceDB and generating the embeddings.
 
-As of 2023, the following embedding models for English are exposed through the `sentence-transformers` library (in order of their performance on the [MTEB leaderboard](https://huggingface.co/spaces/mteb/leaderboard)):
+The following open source embedding models for English are exposed through the `sentence-transformers` library (in order of their performance on the [MTEB leaderboard](https://huggingface.co/spaces/mteb/leaderboard)):
 
 | Model class | Model name | Dimensions | Sequence length
 |:---:|:---|:---:|:---:
@@ -24,28 +24,14 @@ SentenceBERT | `sentence-transformers/all-MiniLM-L6-v2` | 384 | 256
 The following scripts are run with arguments.
 
 ```sh
-# Build FTS and ANN index with 4 workers for generating embeddings
-python index.py --workers 4
+# Ingest full dataset and build FTS and ANN index
+python index.py
 ```
 
 ```sh
-# Deleting existing DB and creating a new one
-python index.py --refresh --workers 4
+# Ingest partial dataset per limit arguemnt and build FTS and ANN index
+python index.py --limit 1000
 ```
-
-Some example timing numbers (on an M2 Macbook Pro) are shown below:
-
-```sh
-Validated data using Pydantic in 0.8486 sec
-Created sentence embeddings in 2013.6714 sec
-Creating ANN index...
-Created ANN index in 4.2722 sec
-Created FTS index in 0.3027 sec
-Finished execution!
-python index.py --refresh  8487.34s user 1995.44s system 518% cpu 33:42.37 total
-```
-
-The full dataset of ~130K records are ingested in ~33 minutes, with the ANN index taking just 4 seconds to build and the FTS index taking ~0.3 seconds to build. As always, generating the embeddings is the most time-consuming step!
 
 ### Run sample FTS and vector search queries
 

@@ -1,6 +1,6 @@
 # Elasticsearch
 
-[Elasticsearch](https://www.elastic.co/what-is/elasticsearch) is a distributed search and analytics engine for semi-structured and unstructured data. It has been the primary tool of choice for handling full-text search (FTS) on huge text datasets, and is the backbone of many search engines in production today. Recently, Elasticsearch has added support for vector search (powered by Lucene), but a large number of use cases rely on a well-designed FTS index.
+[Elasticsearch](https://www.elastic.co/what-is/elasticsearch) is a distributed search and analytics engine for semi-structured and unstructured data. It is the backbone of many search engines in production today via its Lucene-based full-text search capabilities.Recently, Elasticsearch also added support for vector search ANN (HNSW) index.
 
 ## Set up Elasticsearch container
 
@@ -20,30 +20,60 @@ docker compose down
 docker compose up
 ```
 
+## Set up `mappings.json`
+
+A key step prior to indexing data to Elasticsearch is to specify the settings for the index. In this case, we will be creating both an FTS and a vector search (ANN) index.
+
+The following snippet shows how this is specified in the `mapping/mappings.json` file.
+
+```json
+{
+    "settings": {
+        "analysis": {
+            "analyzer": {
+                "custom_analyzer": {
+                    "type": "custom",
+                    "tokenizer": "standard",
+                    "filter": [
+                        "lowercase"
+                    ]
+                }
+            }
+        }
+    }
+    "mappings": {
+        "properties": {
+            "id": {
+                "type": "keyword"
+            },
+            ...
+            ...
+            "vector": {
+                "type": "dense_vector",
+                "dims": 384,
+                "index": true,
+                "similarity": "cosine"
+            }
+        }
+    }
+}
+```
+
+The first section under `"settings"` creates a custom analyzer that will analyzes the text in the index via its lowercased keywords. The second section under `"mappings"` defines the properties of the vector index - in this case we define a fixed-length 384-dimensional vector that will be indexed and searched via cosine similarity.
+
 ## Ingest the data
 
 The first step is to ingest the wine reviews dataset into Elasticsearch. Data is asynchronously ingested into the Elasticsearch database through the scripts in the `scripts` directory.
 
 ```sh
-$ python index.py
+# Ingest partial dataset per limit arguemnt and build FTS and ANN index
+python index.py --limit 1000
+```
 
-python index.py
-Found index wines in db, skipping index creation...
+### Run sample FTS and vector search queries
 
-Finished indexing ID range 1-10000
-Finished indexing ID range 10001-20000
-Finished indexing ID range 20001-30000
-Finished indexing ID range 30001-40000
-Finished indexing ID range 40001-50000
-Finished indexing ID range 50001-60000
-Finished indexing ID range 60001-70000
-Finished indexing ID range 70001-80000
-Finished indexing ID range 80001-90000
-Finished indexing ID range 90001-100000
-Finished indexing ID range 100001-110000
-Finished indexing ID range 110001-120000
-Finished indexing ID range 120001-129971
-Indexed data in 7.0413 sec
+```sh
+python query.py
 ```
 
 * Ingesting ~130K records into Elasticsearch via its async API takes ~7 seconds (M2 Macbook Pro)
@@ -77,4 +107,26 @@ shape: (10, 5)
 │ 47438  ┆ 96     ┆ Williams Selyem 2010 Drake Estat… ┆ Winemaker Bob Cabral's three 201… ┆ 65.0   │
 │ 47439  ┆ 96     ┆ Williams Selyem 2010 Heintz Vine… ┆ The acidity really makes this Ch… ┆ 50.0   │
 └────────┴────────┴───────────────────────────────────┴───────────────────────────────────┴────────┘
+```
+
+### Run vector query
+
+```
+Vector search result
+shape: (10, 5)
+┌─────┬────────┬───────────────────────────────────┬───────────────────────────────────┬───────┐
+│ id  ┆ points ┆ title                             ┆ description                       ┆ price │
+│ --- ┆ ---    ┆ ---                               ┆ ---                               ┆ ---   │
+│ i64 ┆ i64    ┆ str                               ┆ str                               ┆ f64   │
+╞═════╪════════╪═══════════════════════════════════╪═══════════════════════════════════╪═══════╡
+│ 346 ┆ 100    ┆ Chambers Rosewood Vineyards NV R… ┆ This wine contains some material… ┆ 350.0 │
+│ 347 ┆ 98     ┆ Chambers Rosewood Vineyards NV R… ┆ This deep brown wine smells like… ┆ 350.0 │
+│ 348 ┆ 97     ┆ Robert Weil 2014 Kiedrich Gräfen… ┆ Dusty, saffron-spiced earthiness… ┆ 775.0 │
+│ 349 ┆ 97     ┆ Chambers Rosewood Vineyards NV G… ┆ Deep mahogany. Dried fig and bla… ┆ 100.0 │
+│ …   ┆ …      ┆ …                                 ┆ …                                 ┆ …     │
+│ 352 ┆ 96     ┆ Oremus 2005 Eszencia  (Tokaji)    ┆ This amber-colored Hungarian stu… ┆ 320.0 │
+│ 353 ┆ 96     ┆ Rochioli 2014 South River Chardo… ┆ Citrus-kissed saltiness lies at … ┆ 68.0  │
+│ 354 ┆ 96     ┆ Louis Latour 2014 Le Montrachet … ┆ This beautiful, rich wine has ye… ┆ 630.0 │
+│ 355 ┆ 96     ┆ Robert Weil 2014 Kiedrich Gräfen… ┆ Whiffs of white mushroom, saffro… ┆ 365.0 │
+└─────┴────────┴───────────────────────────────────┴───────────────────────────────────┴───────┘
 ```

@@ -5,6 +5,7 @@ import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from functools import lru_cache, partial
+from pathlib import Path
 
 from config import Settings
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -13,7 +14,6 @@ from sentence_transformers import SentenceTransformer
 
 import lancedb
 
-model_type = "sbert"
 NUM_PROBES = 20
 
 
@@ -29,8 +29,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     settings = get_settings()
     model_checkpoint = settings.embedding_model_checkpoint
     app.model = SentenceTransformer(model_checkpoint)
-    app.model_type = "sbert"
     # Define LanceDB client
+    print(Path.cwd())
     db = lancedb.connect("./winemag")
     app.table = db.open_table("wines")
     print("Successfully connected to LanceDB")
@@ -47,6 +47,18 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# --- app ---
+
+
+@app.get("/", include_in_schema=False)
+async def root():
+    return {
+        "message": "REST API for querying LanceDB database of 130k wine reviews from the Wine Enthusiast magazine"
+    }
+
+
+# --- Search functions ---
+
 
 def _fts_search(request: Request, terms: str) -> list[SimilaritySearchModel] | None:
     # In FTS, we limit to a max of 10K points to be more in line with Elasticsearch
@@ -60,7 +72,7 @@ def _fts_search(request: Request, terms: str) -> list[SimilaritySearchModel] | N
     return search_result
 
 
-def _similarity_search(
+def _vector_search(
     request: Request,
     terms: str,
 ) -> list[SimilaritySearchModel] | None:
@@ -78,14 +90,7 @@ def _similarity_search(
     return search_result
 
 
-# --- app ---
-
-
-@app.get("/", include_in_schema=False)
-async def root():
-    return {
-        "message": "REST API for querying LanceDB database of 130k wine reviews from the Wine Enthusiast magazine"
-    }
+# --- Endpoints ---
 
 
 @app.get(
@@ -111,27 +116,21 @@ async def fts_search(
 
 
 @app.get(
-    "/similarity_search",
+    "/vector_search",
     response_model=list[SimilaritySearchModel],
     response_description="Search for wines via semantically similar terms",
 )
-async def similarity_search(
+async def vector_search(
     request: Request,
     terms: str = Query(
         description="Specify terms to search for in the variety, title and description"
     ),
 ) -> list[SimilaritySearchModel] | None:
     loop = asyncio.get_running_loop()
-    result = await loop.run_in_executor(None, partial(_similarity_search, request, terms))
+    result = await loop.run_in_executor(None, partial(_vector_search, request, terms))
     if not result:
         raise HTTPException(
             status_code=404,
             detail=f"No wine with the provided terms '{terms}' found in database - please try again",
         )
     return result
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
