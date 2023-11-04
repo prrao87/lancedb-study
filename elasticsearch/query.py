@@ -80,7 +80,7 @@ async def vector_search(client: AsyncElasticsearch, query: str) -> None:
     if result:
         data = [item["_source"] for item in result]
         df = pl.from_dicts(data)
-        print(f"Full-text search result\n{df}")
+        print(f"Vector search result\n{df}")
 
 
 async def main():
