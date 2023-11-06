@@ -1,0 +1,10 @@
++apple +pear
+"tropical fruit"
++citrus +almond
++orange +grapefruit
++full +bodied
+"citrus acidity"
++blueberry +mint
++beef +lamb
++shellfish +seafood
++vegetable +fish
