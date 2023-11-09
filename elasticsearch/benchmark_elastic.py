@@ -1,7 +1,9 @@
+import argparse
 import asyncio
 from pathlib import Path
 from typing import Any
 
+from codetiming import Timer
 from config import Settings
 from dotenv import load_dotenv
 
@@ -54,33 +56,39 @@ async def fts_search(client: AsyncElasticsearch, query: str) -> list[JsonBlob]:
     )
     result = response["hits"].get("hits")
     if result:
-        data = [item["_source"] for item in result]
+        data = [item["_source"] for item in result][:10]
     else:
         data = {}
     return data
 
 
 async def main(keyword_terms: list[str]):
-    client = await get_elastic_client()
-    assert await client.ping()
+    with Timer(text="Obtained Elastic client in: {:.4f} sec"):
+        client = await get_elastic_client()
+        assert await client.ping()
 
-    tasks = [asyncio.create_task(fts_search(client, query)) for query in keyword_terms]
-    futures = await asyncio.gather(*tasks)
+    with Timer(text="Ran FTS search in: {:.4f} sec"):
+        tasks = [asyncio.create_task(fts_search(client, query)) for query in keyword_terms]
+        res = await asyncio.gather(*tasks)
+        print(f"Finished retrieving {len(res)} FTS query results from Elasticsearch")
 
-    for res in futures:
-        print(res[0].get("description"))
-
-    print("Finished retrieving FTS query results from Elasticsearch")
     # Close client
     await client.close()
 
 
 if __name__ == "__main__":
+    # fmt: off
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--limit", "-l", type=int, default=10, help="Number of search terms to randomly generate")
+    args = parser.parse_args()
+    # fmt: on
+
     # Randomize search terms for a large list
     import random
+
     random.seed(37)
 
     keyword_terms = get_keyword_terms()
-    random_choice_keywords = [random.choice(keyword_terms) for _ in range(200)]
+    random_choice_keywords = [random.choice(keyword_terms) for _ in range(args.limit)]
 
     asyncio.run(main(random_choice_keywords))
