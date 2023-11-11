@@ -1,20 +1,16 @@
 """
 FastAPI app to serve search endpoints
 """
-import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from functools import lru_cache, partial
-from pathlib import Path
+from functools import lru_cache
 
 from config import Settings
 from fastapi import FastAPI, HTTPException, Query, Request
 from schemas.wine import SearchResult
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer
 
 from elasticsearch import AsyncElasticsearch
-
-NUM_PROBES = 20
 
 
 @lru_cache()
@@ -27,12 +23,13 @@ def get_settings():
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Async context manager for Elasticsearch connection."""
     settings = get_settings()
-    app.model = SentenceTransformer(settings.embedding_model_checkpoint)
+    # app.model = SentenceTransformer(settings.embedding_model_checkpoint)
 
     username = settings.elastic_user
     password = settings.elastic_password
     port = settings.elastic_port
     service = settings.elastic_service
+    # service = "localhost"
     elastic_client = AsyncElasticsearch(
         f"http://{service}:{port}",
         basic_auth=(username, password),
@@ -81,7 +78,6 @@ async def _fts_search(request: Request, query: str) -> list[SearchResult] | None
                 }
             }
         },
-        sort={"points": {"order": "desc"}},
         _source=["id", "title", "description", "country", "variety", "price", "points"],
     )
     result = response["hits"].get("hits")
