@@ -8,7 +8,7 @@ from functools import lru_cache
 from config import Settings
 from fastapi import FastAPI, HTTPException, Query, Request
 from schemas.wine import SearchResult
-# from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer
 
 from elasticsearch import AsyncElasticsearch
 
@@ -23,13 +23,12 @@ def get_settings():
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Async context manager for Elasticsearch connection."""
     settings = get_settings()
-    # app.model = SentenceTransformer(settings.embedding_model_checkpoint)
+    app.model = SentenceTransformer(settings.embedding_model_checkpoint)
 
     username = settings.elastic_user
     password = settings.elastic_password
     port = settings.elastic_port
-    service = settings.elastic_service
-    # service = "localhost"
+    service = settings.elastic_url
     elastic_client = AsyncElasticsearch(
         f"http://{service}:{port}",
         basic_auth=(username, password),
@@ -87,6 +86,31 @@ async def _fts_search(request: Request, query: str) -> list[SearchResult] | None
         return None
 
 
+async def _vector_search(request: Request, query: str) -> list[SearchResult] | None:
+    query_vector = request.app.model.encode(query.lower()).tolist()
+    response = await request.app.client.search(
+        index="wines",
+        size=10,
+        query={
+            "script_score": {
+                "query": {"match_all": {}},
+                "script": {
+                    "source": "cosineSimilarity(params.queryVector, 'vector') + 1.0",
+                    "params": {
+                        "queryVector": query_vector,
+                    },
+                },
+            }
+        },
+        _source=["id", "title", "description", "country", "variety", "price", "points"],
+    )
+    result = response["hits"].get("hits")
+    if result:
+        return [item["_source"] for item in result]
+    else:
+        return None
+
+
 # --- Endpoints ---
 
 
@@ -111,22 +135,21 @@ async def fts_search(
     return result
 
 
-# @app.get(
-#     "/vector_search",
-#     response_model=list[SearchResult],
-#     response_description="Search for wines via semantically similar terms",
-# )
-# async def vector_search(
-#     request: Request,
-#     terms: str = Query(
-#         description="Specify terms to search for in the variety, title and description"
-#     ),
-# ) -> list[SearchResult] | None:
-#     loop = asyncio.get_running_loop()
-#     result = await loop.run_in_executor(None, partial(_vector_search, request, terms))
-#     if not result:
-#         raise HTTPException(
-#             status_code=404,
-#             detail=f"No wine with the provided terms '{terms}' found in database - please try again",
-#         )
-#     return result
+@app.get(
+    "/vector_search",
+    response_model=list[SearchResult],
+    response_description="Search for wines via semantically similar terms",
+)
+async def vector_search(
+    request: Request,
+    query: str = Query(
+        description="Specify terms to search for in the variety, title and description"
+    ),
+) -> list[SearchResult] | None:
+    result = await _vector_search(request, query)
+    if not result:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No wine with the provided terms '{query}' found in database - please try again",
+        )
+    return result

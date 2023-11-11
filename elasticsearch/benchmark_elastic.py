@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from codetiming import Timer
+from regex import B
 from config import Settings
 from dotenv import load_dotenv
 
