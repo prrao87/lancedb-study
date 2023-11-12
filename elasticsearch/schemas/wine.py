@@ -54,6 +54,21 @@ class Wine(BaseModel):
 class SearchResult(BaseModel):
     "Model to return search results"
 
+    model_config = ConfigDict(
+        extra="ignore",
+        json_schema_extra={
+            "example": {
+                "id": 374,
+                "title": "Borgo Conventi 2002 I Fiori del Borgo Sauvignon Blanc (Collio)",
+                "description": "Crisp, green, grassy wine with fresh acidity and herbeceous character. It is very New World with its tropical flavors and open, forward fruit.",
+                "country": "Italy",
+                "variety": "Sauvignon Blanc",
+                "price": 15,
+                "points": 88,
+            }
+        },
+    )
+
     id: int
     title: str
     description: Optional[str]

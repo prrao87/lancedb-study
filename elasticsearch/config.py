@@ -14,5 +14,4 @@ class Settings(BaseSettings):
     elastic_port: int
     kibana_port: int
     elastic_url: str
-    elastic_service: str
     embedding_model_checkpoint: str

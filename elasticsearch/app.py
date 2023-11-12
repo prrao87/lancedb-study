@@ -4,14 +4,13 @@ FastAPI app to serve search endpoints
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from functools import lru_cache
-from pathlib import Path
 
 from config import Settings
 from fastapi import FastAPI, HTTPException, Query, Request
 from schemas.wine import SearchResult
 from sentence_transformers import SentenceTransformer
 
-import lancedb
+from elasticsearch import AsyncElasticsearch
 
 
 @lru_cache()
@@ -22,17 +21,27 @@ def get_settings():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Async context manager for lancedb connection."""
+    """Async context manager for Elasticsearch connection."""
     settings = get_settings()
-    model_checkpoint = settings.embedding_model_checkpoint
-    app.model = SentenceTransformer(model_checkpoint)
-    # Define LanceDB client
-    print(Path.cwd())
-    db = lancedb.connect("./winemag")
-    app.table = db.open_table("wines")
-    print("Successfully connected to LanceDB")
+    app.model = SentenceTransformer(settings.embedding_model_checkpoint)
+
+    username = settings.elastic_user
+    password = settings.elastic_password
+    port = settings.elastic_port
+    service = settings.elastic_url
+    elastic_client = AsyncElasticsearch(
+        f"http://{service}:{port}",
+        basic_auth=(username, password),
+        request_timeout=60,
+        max_retries=3,
+        retry_on_timeout=True,
+        verify_certs=False,
+    )
+    app.client = elastic_client
+    print("Successfully connected to Elasticsearch")
     yield
-    print("Successfully closed LanceDB connection and released resources")
+    await elastic_client.close()
+    print("Successfully closed Elasticsearch connection")
 
 
 app = FastAPI(
@@ -57,34 +66,49 @@ async def root():
 # --- Search functions ---
 
 
-def _fts_search(request: Request, terms: str) -> list[SearchResult] | None:
-    # In FTS, we limit to a max of 10K points to be more in line with Elasticsearch
-    search_result = (
-        request.app.table.search(terms, vector_column_name="to_vectorize")
-        .select(["id", "title", "description", "country", "variety", "price", "points"])
-        .limit(10)
-    ).to_pydantic(SearchResult)
-    if not search_result:
+async def _fts_search(request: Request, query: str) -> list[SearchResult] | None:
+    response = await request.app.client.search(
+        index="wines",
+        size=10,
+        query={
+            "match": {
+                "description": {
+                    "query": query,
+                }
+            }
+        },
+        _source=["id", "title", "description", "country", "variety", "price", "points"],
+    )
+    result = response["hits"].get("hits")
+    if result:
+        return [item["_source"] for item in result]
+    else:
         return None
-    return search_result
 
 
-def _vector_search(
-    request: Request,
-    terms: str,
-) -> list[SearchResult] | None:
-    query_vector = request.app.model.encode(terms.lower())
-    search_result = (
-        request.app.table.search(query_vector)
-        .metric("cosine")
-        .nprobes(20)
-        .select(["id", "title", "description", "country", "variety", "price", "points"])
-        .limit(10)
-    ).to_pydantic(SearchResult)
-
-    if not search_result:
+async def _vector_search(request: Request, query: str) -> list[SearchResult] | None:
+    query_vector = request.app.model.encode(query.lower()).tolist()
+    response = await request.app.client.search(
+        index="wines",
+        size=10,
+        query={
+            "script_score": {
+                "query": {"match_all": {}},
+                "script": {
+                    "source": "cosineSimilarity(params.queryVector, 'vector') + 1.0",
+                    "params": {
+                        "queryVector": query_vector,
+                    },
+                },
+            }
+        },
+        _source=["id", "title", "description", "country", "variety", "price", "points"],
+    )
+    result = response["hits"].get("hits")
+    if result:
+        return [item["_source"] for item in result]
+    else:
         return None
-    return search_result
 
 
 # --- Endpoints ---
@@ -101,7 +125,8 @@ async def fts_search(
         description="Specify terms to search for in the variety, title and description"
     ),
 ) -> list[SearchResult] | None:
-    result = _fts_search(request, query)
+    result = await _fts_search(request, query)
+
     if not result:
         raise HTTPException(
             status_code=404,
@@ -121,7 +146,7 @@ async def vector_search(
         description="Specify terms to search for in the variety, title and description"
     ),
 ) -> list[SearchResult] | None:
-    result = _fts_search(request, query)
+    result = await _vector_search(request, query)
     if not result:
         raise HTTPException(
             status_code=404,
