@@ -6,11 +6,7 @@ from typing import Any
 import aiohttp
 from aiohttp.client_exceptions import ContentTypeError
 from codetiming import Timer
-from config import Settings
 from dotenv import load_dotenv
-from pydantic_settings import BaseSettings
-
-from elasticsearch import AsyncElasticsearch
 
 load_dotenv()
 # Custom types
@@ -42,7 +38,7 @@ async def async_get(
             return None
 
 
-async def fts_search(
+async def search_for_result(
     session: aiohttp.ClientSession, endpoint: str, query: str
 ) -> list[JsonBlob] | None:
     url = f"{endpoint}?query={query}"
@@ -51,24 +47,20 @@ async def fts_search(
 
 
 async def main(keyword_terms: list[str]):
-    FTS_URL = "http://localhost:8000/fts_search"
-    VECTOR_SEARCH_URL = "http://localhost:8000/vector_search"
+    if args.search == "fts":
+        URL = "http://localhost:8000/fts_search"
+    else:
+        URL = "http://localhost:8000/vector_search"
 
     async with aiohttp.ClientSession() as http_session:
-        with Timer(text="Ran FTS search in: {:.4f} sec"):
-            if args.search == "fts":
-                tasks = [
-                    asyncio.create_task(fts_search(http_session, FTS_URL, query))
-                    for query in keyword_terms
-                ]
-            else:
-                tasks = [
-                    asyncio.create_task(fts_search(http_session, VECTOR_SEARCH_URL, query))
-                    for query in keyword_terms
-                ]
+        with Timer(text="Ran search in: {:.4f} sec"):
+            tasks = [
+                asyncio.create_task(search_for_result(http_session, URL, query))
+                for query in keyword_terms
+            ]
             res = await asyncio.gather(*tasks)
             print(
-                f"Finished retrieving {len(res)} {args.search} search query results from Elasticsearch"
+                f"Finished retrieving {len(res)} {args.search} search query results"
             )
 
 
