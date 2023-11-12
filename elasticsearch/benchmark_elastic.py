@@ -1,23 +1,20 @@
 import argparse
 import asyncio
-import aiohttp
-from aiohttp.client_exceptions import ContentTypeError
 from pathlib import Path
 from typing import Any
 
+import aiohttp
+from aiohttp.client_exceptions import ContentTypeError
 from codetiming import Timer
 from config import Settings
-from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
-
+from pydantic_settings import BaseSettings
 
 from elasticsearch import AsyncElasticsearch
 
 load_dotenv()
 # Custom types
 JsonBlob = dict[str, Any]
-
-
 
 
 def get_keyword_terms() -> list[str]:
@@ -45,7 +42,9 @@ async def async_get(
             return None
 
 
-async def fts_search(session: aiohttp.ClientSession, endpoint: str, query: str) -> list[JsonBlob] | None:
+async def fts_search(
+    session: aiohttp.ClientSession, endpoint: str, query: str
+) -> list[JsonBlob] | None:
     url = f"{endpoint}?query={query}"
     response = await async_get(session, url, headers=None)
     return response
@@ -55,16 +54,22 @@ async def main(keyword_terms: list[str]):
     FTS_URL = "http://localhost:8000/fts_search"
     VECTOR_SEARCH_URL = "http://localhost:8000/vector_search"
 
-
-
     async with aiohttp.ClientSession() as http_session:
         with Timer(text="Ran FTS search in: {:.4f} sec"):
             if args.search == "fts":
-                tasks = [asyncio.create_task(fts_search(http_session, FTS_URL, query)) for query in keyword_terms]
+                tasks = [
+                    asyncio.create_task(fts_search(http_session, FTS_URL, query))
+                    for query in keyword_terms
+                ]
             else:
-                tasks = [asyncio.create_task(fts_search(http_session, VECTOR_SEARCH_URL, query)) for query in keyword_terms]
+                tasks = [
+                    asyncio.create_task(fts_search(http_session, VECTOR_SEARCH_URL, query))
+                    for query in keyword_terms
+                ]
             res = await asyncio.gather(*tasks)
-            print(f"Finished retrieving {len(res)} {args.search} search query results from Elasticsearch")
+            print(
+                f"Finished retrieving {len(res)} {args.search} search query results from Elasticsearch"
+            )
 
 
 if __name__ == "__main__":
