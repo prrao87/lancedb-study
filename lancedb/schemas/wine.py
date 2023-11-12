@@ -88,46 +88,8 @@ class LanceModelWine(BaseModel):
     vector: Vector(384)
 
 
-class FullTextSearchModel(BaseModel):
-    model_config = ConfigDict(
-        extra="ignore",
-        json_schema_extra={
-            "example": {
-                "id": 3845,
-                "title": "Castellinuzza e Piuca 2010  Chianti Classico",
-                "description": "This gorgeous Chianti Classico boasts lively cherry, strawberry and violet aromas. The mouthwatering palate shows concentrated wild-cherry flavor layered with mint, white pepper and clove. It has fresh acidity and firm tannins that will develop complexity with more bottle age. A textbook Chianti Classico.",
-                "country": "Italy",
-                "variety": "Red Blend",
-                "points": 93,
-                "price": 16,
-            }
-        },
-    )
-
-    id: int
-    title: str
-    description: Optional[str]
-    country: Optional[str]
-    variety: Optional[str]
-    price: Optional[float]
-    points: Optional[int]
-
-
-class SimilaritySearchModel(LanceModel):
-    model_config = ConfigDict(
-        extra="ignore",
-        json_schema_extra={
-            "example": {
-                "id": 3845,
-                "title": "Castellinuzza e Piuca 2010  Chianti Classico",
-                "description": "This gorgeous Chianti Classico boasts lively cherry, strawberry and violet aromas. The mouthwatering palate shows concentrated wild-cherry flavor layered with mint, white pepper and clove. It has fresh acidity and firm tannins that will develop complexity with more bottle age. A textbook Chianti Classico.",
-                "country": "Italy",
-                "variety": "Red Blend",
-                "points": 93,
-                "price": 16,
-            }
-        },
-    )
+class SearchResult(LanceModel):
+    "Model to return search results"
 
     id: int
     title: str

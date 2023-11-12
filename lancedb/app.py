@@ -1,20 +1,17 @@
 """
 FastAPI app to serve search endpoints
 """
-import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from functools import lru_cache, partial
+from functools import lru_cache
 from pathlib import Path
 
 from config import Settings
 from fastapi import FastAPI, HTTPException, Query, Request
-from schemas.wine import FullTextSearchModel, SimilaritySearchModel
+from schemas.wine import SearchResult
 from sentence_transformers import SentenceTransformer
 
 import lancedb
-
-NUM_PROBES = 20
 
 
 @lru_cache()
@@ -60,13 +57,13 @@ async def root():
 # --- Search functions ---
 
 
-def _fts_search(request: Request, terms: str) -> list[SimilaritySearchModel] | None:
+def _fts_search(request: Request, terms: str) -> list[SearchResult] | None:
     # In FTS, we limit to a max of 10K points to be more in line with Elasticsearch
     search_result = (
         request.app.table.search(terms, vector_column_name="to_vectorize")
-        .select(["id", "points", "title", "description", "country", "price", "variety"])
-        .limit(10000)
-    ).to_pydantic(SimilaritySearchModel)
+        .select(["id", "title", "description", "country", "variety", "price", "points"])
+        .limit(10)
+    ).to_pydantic(SearchResult)
     if not search_result:
         return None
     return search_result
@@ -75,15 +72,15 @@ def _fts_search(request: Request, terms: str) -> list[SimilaritySearchModel] | N
 def _vector_search(
     request: Request,
     terms: str,
-) -> list[SimilaritySearchModel] | None:
+) -> list[SearchResult] | None:
     query_vector = request.app.model.encode(terms.lower())
     search_result = (
         request.app.table.search(query_vector)
         .metric("cosine")
-        .nprobes(NUM_PROBES)
-        .select(["id", "points", "title", "description", "country", "price", "variety"])
-        .limit(5)
-    ).to_pydantic(SimilaritySearchModel)
+        .nprobes(20)
+        .select(["id", "title", "description", "country", "variety", "price", "points"])
+        .limit(10)
+    ).to_pydantic(SearchResult)
 
     if not search_result:
         return None
@@ -95,42 +92,39 @@ def _vector_search(
 
 @app.get(
     "/fts_search",
-    response_model=list[FullTextSearchModel],
+    response_model=list[SearchResult],
     response_description="Search for wines via full-text keywords",
 )
 async def fts_search(
     request: Request,
-    terms: str = Query(
+    query: str = Query(
         description="Specify terms to search for in the variety, title and description"
     ),
-) -> list[FullTextSearchModel] | None:
-    loop = asyncio.get_running_loop()
-    result = await loop.run_in_executor(None, partial(_fts_search, request, terms))
-
+) -> list[SearchResult] | None:
+    result = _fts_search(request, query)
     if not result:
         raise HTTPException(
             status_code=404,
-            detail=f"No wine with the provided terms '{terms}' found in database - please try again",
+            detail=f"No wine with the provided terms '{query}' found in database - please try again",
         )
     return result
 
 
 @app.get(
     "/vector_search",
-    response_model=list[SimilaritySearchModel],
+    response_model=list[SearchResult],
     response_description="Search for wines via semantically similar terms",
 )
 async def vector_search(
     request: Request,
-    terms: str = Query(
+    query: str = Query(
         description="Specify terms to search for in the variety, title and description"
     ),
-) -> list[SimilaritySearchModel] | None:
-    loop = asyncio.get_running_loop()
-    result = await loop.run_in_executor(None, partial(_vector_search, request, terms))
+) -> list[SearchResult] | None:
+    result = _fts_search(request, query)
     if not result:
         raise HTTPException(
             status_code=404,
-            detail=f"No wine with the provided terms '{terms}' found in database - please try again",
+            detail=f"No wine with the provided terms '{query}' found in database - please try again",
         )
     return result
