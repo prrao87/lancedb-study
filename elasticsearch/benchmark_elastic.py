@@ -1,18 +1,23 @@
 import argparse
 import asyncio
+import aiohttp
+from aiohttp.client_exceptions import ContentTypeError
 from pathlib import Path
 from typing import Any
 
 from codetiming import Timer
-from regex import B
 from config import Settings
+from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
+
 
 from elasticsearch import AsyncElasticsearch
 
 load_dotenv()
 # Custom types
 JsonBlob = dict[str, Any]
+
+
 
 
 def get_keyword_terms() -> list[str]:
@@ -24,65 +29,54 @@ def get_keyword_terms() -> list[str]:
     return result
 
 
-async def get_elastic_client() -> AsyncElasticsearch:
-    settings = Settings()
-    # Get environment variables
-    USERNAME = settings.elastic_user
-    PASSWORD = settings.elastic_password
-    PORT = settings.elastic_port
-    ELASTIC_URL = settings.elastic_url
-    # Connect to ElasticSearch
-    elastic_client = AsyncElasticsearch(
-        f"http://{ELASTIC_URL}:{PORT}",
-        basic_auth=(USERNAME, PASSWORD),
-        request_timeout=300,
-        max_retries=3,
-        retry_on_timeout=True,
-        verify_certs=False,
-    )
-    return elastic_client
+async def async_get(
+    session: aiohttp.ClientSession,
+    url: str,
+    headers: dict[str, str] | None,
+    params: dict[str, str] | None = None,
+) -> aiohttp.ClientResponse | None:
+    """Helper method for async GET request with error handling for empty responses"""
+    assert url is not None
+    async with session.get(url, headers=headers, params=params) as response:
+        try:
+            response = await response.json()
+            return response
+        except ContentTypeError:
+            return None
 
 
-async def fts_search(client: AsyncElasticsearch, query: str) -> list[JsonBlob]:
-    response = await client.search(
-        index="wines",
-        size=10_000,
-        query={
-            "match": {
-                "description": {
-                    "query": query,
-                }
-            }
-        },
-    )
-    result = response["hits"].get("hits")
-    if result:
-        data = [item["_source"] for item in result][:10]
-    else:
-        data = {}
-    return data
+async def fts_search(session: aiohttp.ClientSession, endpoint: str, query: str) -> list[JsonBlob] | None:
+    url = f"{endpoint}?query={query}"
+    response = await async_get(session, url, headers=None)
+    return response
 
 
 async def main(keyword_terms: list[str]):
-    with Timer(text="Obtained Elastic client in: {:.4f} sec"):
-        client = await get_elastic_client()
-        assert await client.ping()
+    FTS_URL = "http://localhost:8000/fts_search"
+    VECTOR_SEARCH_URL = "http://localhost:8000/vector_search"
 
-    with Timer(text="Ran FTS search in: {:.4f} sec"):
-        tasks = [asyncio.create_task(fts_search(client, query)) for query in keyword_terms]
-        res = await asyncio.gather(*tasks)
-        print(f"Finished retrieving {len(res)} FTS query results from Elasticsearch")
 
-    # Close client
-    await client.close()
+
+    async with aiohttp.ClientSession() as http_session:
+        with Timer(text="Ran FTS search in: {:.4f} sec"):
+            if args.search == "fts":
+                tasks = [asyncio.create_task(fts_search(http_session, FTS_URL, query)) for query in keyword_terms]
+            else:
+                tasks = [asyncio.create_task(fts_search(http_session, VECTOR_SEARCH_URL, query)) for query in keyword_terms]
+            res = await asyncio.gather(*tasks)
+            print(f"Finished retrieving {len(res)} {args.search} search query results from Elasticsearch")
 
 
 if __name__ == "__main__":
     # fmt: off
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", "-l", type=int, default=10, help="Number of search terms to randomly generate")
+    parser.add_argument("--search", "-s", type=str, default="fts", help="Specify whether to do FTS or vector search")
     args = parser.parse_args()
     # fmt: on
+
+    # Assert that the search type is only one of "fts" or "vector"
+    assert args.search in ["fts", "vector"], "Please specify a valid search type: 'fts' or 'vector'"
 
     # Randomize search terms for a large list
     import random
