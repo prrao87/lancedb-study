@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import random
 from pathlib import Path
 from typing import Any
 
@@ -13,12 +14,13 @@ load_dotenv()
 JsonBlob = dict[str, Any]
 
 
-def get_keyword_terms() -> list[str]:
-    keywords_file = Path(".") / "keyword_terms.txt"
-    with open(keywords_file, "r") as f:
-        keywords = f.readlines()
-    assert keywords
-    result = [keyword.strip() for keyword in keywords]
+def get_query_terms(filename: str) -> list[str]:
+    assert filename.endswith(".txt")
+    query_terms_file = Path("./benchmark_queries") / filename
+    with open(query_terms_file, "r") as f:
+        queries = f.readlines()
+    assert queries
+    result = [query.strip() for query in queries]
     return result
 
 
@@ -46,17 +48,21 @@ async def search_for_result(
     return response
 
 
-async def main(keyword_terms: list[str]):
+async def main():
     if args.search == "fts":
         URL = "http://localhost:8000/fts_search"
+        queries = get_query_terms("keyword_terms.txt")
     else:
         URL = "http://localhost:8000/vector_search"
+        queries = get_query_terms("vector_terms.txt")
+        
+    random_choice_queries = [random.choice(queries) for _ in range(LIMIT)]
 
     async with aiohttp.ClientSession() as http_session:
         with Timer(text="Ran search in: {:.4f} sec"):
             tasks = [
                 asyncio.create_task(search_for_result(http_session, URL, query))
-                for query in keyword_terms
+                for query in random_choice_queries
             ]
             res = await asyncio.gather(*tasks)
             print(f"Finished retrieving {len(res)} {args.search} search query results")
@@ -65,20 +71,16 @@ async def main(keyword_terms: list[str]):
 if __name__ == "__main__":
     # fmt: off
     parser = argparse.ArgumentParser()
+    parser.add_argument("--seed", type=int, default=37, help="Seed for random number generator")
     parser.add_argument("--limit", "-l", type=int, default=10, help="Number of search terms to randomly generate")
-    parser.add_argument("--search", "-s", type=str, default="fts", help="Specify whether to do FTS or vector search")
+    parser.add_argument("--search", type=str, default="fts", help="Specify whether to do FTS or vector search")
     args = parser.parse_args()
     # fmt: on
+
+    LIMIT = args.limit
+    SEED = args.seed
 
     # Assert that the search type is only one of "fts" or "vector"
     assert args.search in ["fts", "vector"], "Please specify a valid search type: 'fts' or 'vector'"
 
-    # Randomize search terms for a large list
-    import random
-
-    random.seed(37)
-
-    keyword_terms = get_keyword_terms()
-    random_choice_keywords = [random.choice(keyword_terms) for _ in range(args.limit)]
-
-    asyncio.run(main(random_choice_keywords))
+    asyncio.run(main())

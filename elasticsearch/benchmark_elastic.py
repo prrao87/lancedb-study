@@ -16,7 +16,7 @@ JsonBlob = dict[str, Any]
 
 def get_query_terms(filename: str) -> list[str]:
     assert filename.endswith(".txt")
-    query_terms_file = Path(".") / filename
+    query_terms_file = Path("./benchmark_queries") / filename
     with open(query_terms_file, "r") as f:
         queries = f.readlines()
     assert queries
@@ -64,7 +64,7 @@ async def main():
                 asyncio.create_task(search_for_result(http_session, URL, query))
                 for query in random_choice_queries
             ]
-            _ = await asyncio.gather(*tasks)
+            res = await asyncio.gather(*tasks)
             print(f"Finished retrieving {len(res)} {args.search} search query results")
 
 
