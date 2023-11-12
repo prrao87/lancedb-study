@@ -69,7 +69,7 @@ async def root():
 async def _fts_search(request: Request, query: str) -> list[SearchResult] | None:
     response = await request.app.client.search(
         index="wines",
-        size=10_000,
+        size=10,
         query={
             "match": {
                 "description": {
@@ -81,7 +81,7 @@ async def _fts_search(request: Request, query: str) -> list[SearchResult] | None
     )
     result = response["hits"].get("hits")
     if result:
-        return [item["_source"] for item in result][:10]
+        return [item["_source"] for item in result]
     else:
         return None
 
