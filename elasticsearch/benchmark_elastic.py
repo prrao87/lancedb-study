@@ -55,7 +55,7 @@ async def main():
     else:
         URL = "http://localhost:8000/vector_search"
         queries = get_query_terms("vector_terms.txt")
-        
+
     random_choice_queries = [random.choice(queries) for _ in range(LIMIT)]
 
     async with aiohttp.ClientSession() as http_session:

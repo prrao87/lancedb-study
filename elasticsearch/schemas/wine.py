@@ -53,6 +53,7 @@ class Wine(BaseModel):
 
 class SearchResult(BaseModel):
     "Model to return search results"
+
     model_config = ConfigDict(
         extra="ignore",
         json_schema_extra={
@@ -63,7 +64,7 @@ class SearchResult(BaseModel):
                 "country": "Italy",
                 "variety": "Sauvignon Blanc",
                 "price": 15,
-                "points": 88
+                "points": 88,
             }
         },
     )
