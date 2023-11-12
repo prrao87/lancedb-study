@@ -59,9 +59,7 @@ async def main(keyword_terms: list[str]):
                 for query in keyword_terms
             ]
             res = await asyncio.gather(*tasks)
-            print(
-                f"Finished retrieving {len(res)} {args.search} search query results"
-            )
+            print(f"Finished retrieving {len(res)} {args.search} search query results")
 
 
 if __name__ == "__main__":
