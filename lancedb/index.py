@@ -84,7 +84,7 @@ def vectorize_text(data: list[JsonBlob]) -> list[LanceModelWine] | None:
 
 
 def embed_batches(tbl: str, validated_data: list[JsonBlob]) -> Table:
-    """Ingest embed vector batches of data via multi-processing for ANN index"""
+    """Ingest vector embeddings in batches for ANN index"""
     chunked_data = chunk_iterable(validated_data, CHUNKSIZE)
     print(f"Adding vectors to table for ANN index...")
     # Add rich progress bar
