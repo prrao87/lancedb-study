@@ -27,7 +27,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     model_checkpoint = settings.embedding_model_checkpoint
     app.model = SentenceTransformer(model_checkpoint)
     # Define LanceDB client
-    print(Path.cwd())
     db = lancedb.connect("./winemag")
     app.table = db.open_table("wines")
     print("Successfully connected to LanceDB")
