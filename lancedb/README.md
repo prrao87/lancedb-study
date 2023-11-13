@@ -27,14 +27,14 @@ A FastAPI app is provided in `app.py` to serve results via FTS and vector search
 uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-The FTS endpoint can be accessed at `http://localhost:8000/search/fts` and the vector search endpoint can be accessed at `http://localhost:8000/search/vector`.
+The FTS endpoint can be accessed at `http://localhost:8000/fts_search` and the vector search endpoint can be accessed at `http://localhost:8000/vector_search`.
 
 **Make sure that the FastAPI server is running before running the following steps.**
 
 
 ### Ingest data and create FTS and ANN indexes
 
-The ingestion and index creation can be run as follows.
+The data ingestion and index creation can be run as follows.
 
 ```sh
 # Ingest full dataset and build FTS and ANN index
@@ -42,7 +42,7 @@ python index.py
 ```
 
 ```sh
-# Ingest partial dataset per limit arguemnt and build FTS and ANN index
+# Ingest partial dataset per limit argument and build FTS and ANN index
 python index.py --limit 1000
 ```
 
@@ -89,8 +89,8 @@ Query [+shellfish +seafood]: Really? A five-buck Oregon Riesling? It's light, le
 Query [+vegetable +fish]: Clean mineral notes blend nicely with fresh berry fruit, red rose and raspberry. This is a simple but genuine wine that would pair with roasted fish or vegetable risotto.
 Ran search in: 0.9256 sec
 
-# Vector search results
 --------------------------------------------------------------------------------
+# Vector search results
 
 Query [vanilla and a hint of smokiness]: Vanilla and maple aromas lead to overtly fruity red cherry flavors with a touch of sweetness and a soft texture. It's pleasant to drink for those looking for a soft touch, with very mild acidity and no tannin to speak of.
 Query [rich and sweet dessert wine with balanced tartness]: This richly extracted dessert wine boasts a dark, inky appearance and aromas of exotic spice, nutmeg, cinnamon, dark chocolate, carob, roasted chestnut and mature blackberries. It is smooth, well textured and exceedingly rich on the close with loads of power, personality and persistency.
