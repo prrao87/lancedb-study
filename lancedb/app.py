@@ -121,7 +121,7 @@ async def vector_search(
         description="Specify terms to search for in the variety, title and description"
     ),
 ) -> list[SearchResult] | None:
-    result = _fts_search(request, query)
+    result = _vector_search(request, query)
     if not result:
         raise HTTPException(
             status_code=404,
