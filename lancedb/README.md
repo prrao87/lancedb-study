@@ -19,9 +19,22 @@ Alibaba General Text Embeddings | `thenlper/gte-small` | 384 | 512
 SentenceBERT | `sentence-transformers/all-MiniLM-L12-v2` | 384 | 256
 SentenceBERT | `sentence-transformers/all-MiniLM-L6-v2` | 384 | 256
 
+## Run FastAPI app to serve query results
+
+A FastAPI app is provided in `app.py` to serve results via FTS and vector search enndpoints, and can be run as follows.
+
+```sh
+uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+```
+
+The FTS endpoint can be accessed at `http://localhost:8000/search/fts` and the vector search endpoint can be accessed at `http://localhost:8000/search/vector`.
+
+**Make sure that the FastAPI server is running before running the following steps.**
+
+
 ### Ingest data and create FTS and ANN indexes
 
-The following scripts are run with arguments.
+The ingestion and index creation can be run as follows.
 
 ```sh
 # Ingest full dataset and build FTS and ANN index
@@ -33,48 +46,64 @@ python index.py
 python index.py --limit 1000
 ```
 
-### Run sample FTS and vector search queries
+### Run benchmark queries for full-text and vector search
+
+A script has been provided that can run either full-text search (FTS) or vector search (ANN) queries. The FTS benchmark can be run as follows.
+
+```sh
+python run_benchmark.py --search fts --limit 1000
+```
+
+This command runs 1000 FTS queries by randomly selecting any of the 10 queries from the `benchmark_queries/keyword_terms.txt`.
+
+The vector search benchmark can be run as follows.
+
+```sh
+python run_benchmark.py --search vector --limit 1000
+```
+
+This command runs 1000 vector search queries by randomly selecting any of the 10 queries from the `benchmark_queries/vector_terms.txt`.
+
+### Inspect the FTS and vector search results
+
+Another script, `query.py` is provided to run the FTS and vector search benchmark queries for qualitative inspection.
 
 ```sh
 python query.py
 ```
 
-The full text search (via BM25 keyword matches) and vector search (via cosine similarity) results are shown below.
+The top result for each of the 10 FTS (via BM25) and vector search (via cosine similarity) queries are shown below.
 
 ```
-Full-text search result
-shape: (10, 17)
-┌────────┬────────┬───────────────────────────────────┬───────────────────────────────────┬───┬───────────────────────┬───────────────────────────────────┬───────────────────────────────────┬──────────┐
-│ id     ┆ points ┆ title                             ┆ description                       ┆ … ┆ taster_twitter_handle ┆ to_vectorize                      ┆ vector                            ┆ score    │
-│ ---    ┆ ---    ┆ ---                               ┆ ---                               ┆   ┆ ---                   ┆ ---                               ┆ ---                               ┆ ---      │
-│ i64    ┆ i64    ┆ str                               ┆ str                               ┆   ┆ str                   ┆ str                               ┆ array[f32, 384]                   ┆ f64      │
-╞════════╪════════╪═══════════════════════════════════╪═══════════════════════════════════╪═══╪═══════════════════════╪═══════════════════════════════════╪═══════════════════════════════════╪══════════╡
-│ 125527 ┆ 88     ┆ Robert Renzoni 2016 Julia's Vine… ┆ This is a fruity, tropical rendi… ┆ … ┆ @mattkettmann         ┆ Pinot Grigio Robert Renzoni 2016… ┆ [-0.001237, 0.021784, … 0.041974… ┆ 5.901485 │
-│ 127601 ┆ 83     ┆ Banrock Station 2001 Chardonnay … ┆ Good party Chard. Nothing too co… ┆ … ┆ @JoeCz                ┆ Chardonnay Banrock Station 2001 … ┆ [-0.020877, -0.015568, … 0.02873… ┆ 5.841707 │
-│ 125136 ┆ 86     ┆ Pride Mountain 2010 Viognier (So… ┆ This is a powerful wine, almost … ┆ … ┆ null                  ┆ Viognier Pride Mountain 2010 Vio… ┆ [-0.000642, -0.016708, … 0.03495… ┆ 5.580855 │
-│ 129608 ┆ 84     ┆ Castle Rock 2010 Chardonnay (Rus… ┆ Too oaky and forward in tropical… ┆ … ┆ null                  ┆ Chardonnay Castle Rock 2010 Char… ┆ [-0.030962, -0.0411, … 0.00888]   ┆ 5.421664 │
-│ …      ┆ …      ┆ …                                 ┆ …                                 ┆ … ┆ …                     ┆ …                                 ┆ …                                 ┆ …        │
-│ 126170 ┆ 88     ┆ Valle dell'Acate 2013 Zagra Gril… ┆ It opens with pretty aromas of o… ┆ … ┆ @kerinokeefe          ┆ Grillo Valle dell'Acate 2013 Zag… ┆ [-0.022173, 0.026167, … 0.020694… ┆ 5.3706   │
-│ 126410 ┆ 86     ┆ Justin 2012 Chardonnay (Central … ┆ Although Chardonnay might not tr… ┆ … ┆ null                  ┆ Chardonnay Justin 2012 Chardonna… ┆ [0.001362, -0.034199, … 0.032258… ┆ 5.3706   │
-│ 128804 ┆ 85     ┆ Tenute Orestiadi 2016 Molino a V… ┆ Tropical fruit aromas meld with … ┆ … ┆ @kerinokeefe          ┆ Grillo Tenute Orestiadi 2016 Mol… ┆ [-0.011769, 0.060849, … 0.02716]  ┆ 5.320488 │
-│ 129690 ┆ 87     ┆ Passaggio 2011 New Generation Un… ┆ Vanilla cream, honey and tropica… ┆ … ┆ null                  ┆ Chardonnay Passaggio 2011 New Ge… ┆ [-0.013895, -0.014257, … 0.00822… ┆ 5.271303 │
-└────────┴────────┴───────────────────────────────────┴───────────────────────────────────┴───┴───────────────────────┴───────────────────────────────────┴───────────────────────────────────┴──────────┘
-Vector search result
-shape: (10, 17)
-┌────────┬────────┬───────────────────────────────────┬───────────────────────────────────┬───┬───────────────────────┬───────────────────────────────────┬───────────────────────────────────┬───────────┐
-│ id     ┆ points ┆ title                             ┆ description                       ┆ … ┆ taster_twitter_handle ┆ to_vectorize                      ┆ vector                            ┆ _distance │
-│ ---    ┆ ---    ┆ ---                               ┆ ---                               ┆   ┆ ---                   ┆ ---                               ┆ ---                               ┆ ---       │
-│ i64    ┆ i64    ┆ str                               ┆ str                               ┆   ┆ str                   ┆ str                               ┆ array[f32, 384]                   ┆ f32       │
-╞════════╪════════╪═══════════════════════════════════╪═══════════════════════════════════╪═══╪═══════════════════════╪═══════════════════════════════════╪═══════════════════════════════════╪═══════════╡
-│ 125367 ┆ 88     ┆ Trapiche 2016 Costa & Pampa Char… ┆ This blend of coastal and desert… ┆ … ┆ @wineschach           ┆ Chardonnay Trapiche 2016 Costa &… ┆ [-0.012717, -0.000868, … 0.02559… ┆ 0.27347   │
-│ 129111 ┆ 87     ┆ Palamà 2012 Mavro Negroamaro (Sa… ┆ Made with Negroamaro, this offer… ┆ … ┆ @kerinokeefe          ┆ Negroamaro Palamà 2012 Mavro Neg… ┆ [-0.027401, 0.019011, … 0.032753… ┆ 0.27694   │
-│ 129487 ┆ 88     ┆ Herdade Grande 2012 Colheita Sel… ┆ This fruity wine boasts flavors … ┆ … ┆ @vossroger            ┆ Portuguese White Herdade Grande … ┆ [-0.011832, -0.017191, … 0.04267… ┆ 0.277972  │
-│ 127491 ┆ 85     ┆ Domaines Barons de Rothschild (L… ┆ Aromas of pineapple, lemon and s… ┆ … ┆ @wineschach           ┆ Chardonnay Domaines Barons de Ro… ┆ [-0.018693, -0.015425, … 0.02040… ┆ 0.278787  │
-│ …      ┆ …      ┆ …                                 ┆ …                                 ┆ … ┆ …                     ┆ …                                 ┆ …                                 ┆ …         │
-│ 126003 ┆ 84     ┆ Casal do Conde 2013 White (Tejo)  ┆ This blend of Sauvignon Blanc an… ┆ … ┆ @vossroger            ┆ Portuguese White Casal do Conde … ┆ [-0.012546, 0.001385, … 0.039636… ┆ 0.292588  │
-│ 128181 ┆ 86     ┆ Ochoa 2016 Calendas Garnacha Ros… ┆ Clean nectarine and red plum aro… ┆ … ┆ @wineschach           ┆ Rosado Ochoa 2016 Calendas Garna… ┆ [-0.038352, -0.027079, … 0.00070… ┆ 0.293419  │
-│ 126929 ┆ 87     ┆ Paul Prieur et Fils 2014  Sancer… ┆ In this soft, ripe wine, rounded… ┆ … ┆ @vossroger            ┆ Sauvignon Blanc Paul Prieur et F… ┆ [-0.033548, 0.005416, … 0.035486… ┆ 0.293846  │
-│ 126489 ┆ 86     ┆ Domaine Cheysson 2011  Chirouble… ┆ Emphasizing tannins and tight st… ┆ … ┆ @vossroger            ┆ Gamay Domaine Cheysson 2011  Chi… ┆ [-0.021621, -0.011956, … 0.03878… ┆ 0.294202  │
-└────────┴────────┴───────────────────────────────────┴───────────────────────────────────┴───┴───────────────────────┴───────────────────────────────────┴───────────────────────────────────┴───────────┘
+# Full text search results
+
+Query [+apple +pear]: The pear, apple and apple skin aromas are light. The palate brings just off-dry pear flavors with a full feel.
+Query ["tropical fruit"]: Plump tropical fruit aromas show on the nose. A fruity but not complex palate deals short melon and tropical-fruit flavors prior to a briny finish.
+Query [+citrus +almond]: Inviting aromas of butter, almond and citrus open into a rich, thickly textured wine studded with peach, almond butter and citrus pith. The slightly bitter notes echo through the finish, providing a welcome sense of balance to round mouthfeel and fatty flavors.
+Query [+orange +grapefruit]: Made from Cabernet Sauvignon, this has funky, yeasty aromas of pink grapefruit and passion fruit that turn citrusy and briny if given time. On the palate, this recalls orange juice. Orange, grapefruit and generic tang proceed from the flavor profile to the finish.
+Query [+full +bodied]: Produced from organically grown grapes, this wine is full of fragrant, clean red-fruit flavors. It is ripe and full bodied—perhaps too full-bodied for a really fresh rosé. It does have all the fruit, generous and with a soft aftertaste.
+Query ["citrus acidity"]: This soft, ripe wine has good apricot and peach flavors alongside the crisper citrus acidity. It is spicy, fruity and ready to drink.
+Query [+blueberry +mint]: Exotic aromas of cardamom, blueberry and spiced currant filter onto a fresh but wide-bodied palate with raspberry, blueberry, herb and spice flavors. The finish is intriguing due to a reprise of notes like anise, mint and herbal berry flavors.
+Query [+beef +lamb]: Tarry, savory notes of dried beef, soy, charred lamb and underlying blackberry combine for a nose that screams umami. The palate carries a similar effect of grilled, lavender-covered lamb shank, black peppercorns and black sesame.
+Query [+shellfish +seafood]: Really? A five-buck Oregon Riesling? It's light, lemony and tart, but it's real wine, simple and plain, yet fine with shellfish or other light seafood.
+Query [+vegetable +fish]: Clean mineral notes blend nicely with fresh berry fruit, red rose and raspberry. This is a simple but genuine wine that would pair with roasted fish or vegetable risotto.
+Ran search in: 0.9256 sec
+
+# Vector search results
+--------------------------------------------------------------------------------
+
+Query [vanilla and a hint of smokiness]: Vanilla and maple aromas lead to overtly fruity red cherry flavors with a touch of sweetness and a soft texture. It's pleasant to drink for those looking for a soft touch, with very mild acidity and no tannin to speak of.
+Query [rich and sweet dessert wine with balanced tartness]: This richly extracted dessert wine boasts a dark, inky appearance and aromas of exotic spice, nutmeg, cinnamon, dark chocolate, carob, roasted chestnut and mature blackberries. It is smooth, well textured and exceedingly rich on the close with loads of power, personality and persistency.
+Query [cherry and plum aromas]: Earthy, herbal aromas of cherry and plum come with a funky note of wet dog fur. Hailing from a cool, wet vintage, this is showing shearing acidity and abrasiveness. Quick-hitting raspberry, plum and red-currant flavors end with edginess and snap. This is 40% each Cabernets Sauvignon and Franc, with 20% Monastrell.
+Query [right balance of citrus acidity]: True to its name, this blend is tangy in acidity. Flavorwise, it's simple, with pleasant orange, peach, lemon and vanilla flavors that finish a little sweet.
+Query [grassy aroma with apple and tropical fruit]: Spring flower aromas mingle with a hint of orchard fruit. On the lean, extremely simple palate, yellow apple fruit mixes with a lemon zest note.
+Query [bitter with a dry aftertaste]: Even at a considerable 15 g/l of residual sugar, this wine comes across as almost dry, thanks to its crisp acidity. Scents of petrichor, green apple and lime start things off, while those razor-sharp acids show up on the finish. Drink now.
+Query [sweet with a hint of chocolate and berry flavor]: A bouquet of cherry, white chocolate and juniper berry sets the stage for flavors of raspberry, blackberry, blueberry pie and baking spices. It is smooth in the mouth, with a sense of soft sweetness that is neither overpowering nor cloying, bolstered by a pervasive backbone of acidity.
+Query [acidic on the palate with oak aromas]: The oaky smoke is quite powerful on the nose, which also shows vanilla dust and lime juice. The palate is anything but austere, full of toast, caramelized apples and smoked fruits. A line of citrus acidity stops it from becoming flabby, but this is definitely for the oak lovers crowd.
+Query [balanced tannins and dry and fruity composition]: There is a good core of tannin here, the fruit sweet plums and ripe tannins, relatively soft and easy. Only that kernel of tannin offers some aging possibility.
+Query [peppery undertones that pairs with steak or barbecued meat]: An easy red blend, this would pair well with hamburgers or grilled meats. Notes of cherry and blackberry accent the palate.
+Ran search in: 0.2470 sec
+
 ```
+
 
