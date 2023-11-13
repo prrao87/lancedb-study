@@ -1,6 +1,6 @@
-# LanceDB: A study on full-text, SQL and vector search performance
+# LanceDB benchmark: Full-text and vector search performance
 
-[LanceDB](https://github.com/lancedb/lancedb) is an embedded (serverless), developer-friendly and open source vector DB that serves as an alternative to a host of client-server vector DBs currently in the market. Some key features about LanceDB that make it extremely interesting are listed below, among many others listed on their GitHub repo.
+[LanceDB](https://github.com/lancedb/lancedb) is an open source, embedded and developer-friendly vector database. Some key features about LanceDB that make it extremely valuable are listed below, among many others listed on their GitHub repo.
 
 * Incredibly lightweight (no DB servers to manage), because it runs entirely in-process with the application
 * Extremely scalable from development to production
@@ -8,7 +8,7 @@
 * Multi-modal data support (images, text, video, audio, point-clouds, etc.)
 * Zero-copy (via [Arrow](https://github.com/apache/arrow-rs)) with automatic versioning of data on its native [Lance](https://github.com/lancedb/lance) storage format
 
-The aim of this repo is to go over the full-text, SQL and vector search features of LanceDB on a text dataset of Wine reviews, and also to study query performance and throughput.
+The aim of this repo is to demonstrate the full-text and vector search features of LanceDB via an end-to-end benchmark, in which we carefully study query results and throughput.
 
 ## Dataset
 
@@ -16,7 +16,7 @@ The dataset used for this demo is the [Wine Reviews](https://www.kaggle.com/zyni
 
 ## Comparison
 
-Studying the performance of any tool in isolation is a challenge, so for the sake of comparison, an Elasticsearch workflow is provided in this repo. [Elasticsearch](https://github.com/elastic/elasticsearch) is a popular Lucene-based full-text and vector search engine, so this is a meaningful comparison.
+Studying the performance of any tool in isolation is a challenge, so for the sake of comparison, an Elasticsearch workflow is provided in this repo. [Elasticsearch](https://github.com/elastic/elasticsearch) is a popular Lucene-based full-text and vector search engine whose use is regularly justified for full-text (and these days, vector search), so this makes it a meaningful tool to compare LanceDB against.
 
 ## Setup
 
