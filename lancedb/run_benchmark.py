@@ -7,9 +7,7 @@ from typing import Any
 import aiohttp
 from aiohttp.client_exceptions import ContentTypeError
 from codetiming import Timer
-from dotenv import load_dotenv
 
-load_dotenv()
 # Custom types
 JsonBlob = dict[str, Any]
 
@@ -27,25 +25,16 @@ def get_query_terms(filename: str) -> list[str]:
 async def async_get(
     session: aiohttp.ClientSession,
     url: str,
-    headers: dict[str, str] | None,
     params: dict[str, str] | None = None,
 ) -> aiohttp.ClientResponse | None:
     """Helper method for async GET request with error handling for empty responses"""
     assert url is not None
-    async with session.get(url, headers=headers, params=params) as response:
+    async with session.get(url, params=params) as response:
         try:
             response = await response.json()
             return response
         except ContentTypeError:
             return None
-
-
-async def search_for_result(
-    session: aiohttp.ClientSession, endpoint: str, query: str
-) -> list[JsonBlob] | None:
-    url = f"{endpoint}?query={query}"
-    response = await async_get(session, url, headers=None)
-    return response
 
 
 async def main():
@@ -61,7 +50,7 @@ async def main():
     async with aiohttp.ClientSession() as http_session:
         with Timer(text="Ran search in: {:.4f} sec"):
             tasks = [
-                asyncio.create_task(search_for_result(http_session, URL, query))
+                asyncio.create_task(async_get(http_session, URL, params={"query": query}))
                 for query in random_choice_queries
             ]
             res = await asyncio.gather(*tasks)
