@@ -1,106 +1,74 @@
+"""
+Run queries for full-text search and vector search and print out the results for inspection
+
+Requires that a FastAPI server with search endpoints is running at the specified URL on port 8000
+"""
+import asyncio
+from pathlib import Path
 from typing import Any
 
-import polars as pl
-from config import Settings
-from sentence_transformers import SentenceTransformer
-
-from elasticsearch import AsyncElasticsearch
+import aiohttp
+from aiohttp.client_exceptions import ContentTypeError
+from codetiming import Timer
 
 # Custom types
 JsonBlob = dict[str, Any]
 
-
-async def get_elastic_client() -> AsyncElasticsearch:
-    settings = Settings()
-    # Get environment variables
-    USERNAME = settings.elastic_user
-    PASSWORD = settings.elastic_password
-    PORT = settings.elastic_port
-    ELASTIC_URL = settings.elastic_url
-    # Connect to ElasticSearch
-    elastic_client = AsyncElasticsearch(
-        f"http://{ELASTIC_URL}:{PORT}",
-        basic_auth=(USERNAME, PASSWORD),
-        request_timeout=300,
-        max_retries=3,
-        retry_on_timeout=True,
-        verify_certs=False,
-    )
-    return elastic_client
+API_URL = "localhost"
+API_PORT = 8000
 
 
-async def fts_search(client: AsyncElasticsearch, query: str) -> None:
-    response = await client.search(
-        index="wines",
-        size=10,
-        query={
-            "bool": {
-                "must": [
-                    {
-                        "multi_match": {
-                            "query": query.lower(),
-                            "fields": ["title", "description"],
-                            "minimum_should_match": 2,
-                            "fuzziness": "AUTO",
-                        }
-                    }
-                ],
-            }
-        },
-        sort={"points": {"order": "desc"}},
-        _source=["id", "title", "description", "points", "price"],
-    )
-    result = response["hits"].get("hits")
-    if result:
-        data = [item["_source"] for item in result]
-        df = pl.from_dicts(data)
-        print(f"Full-text search result\n{df}")
+def get_query_terms(filename: str) -> list[str]:
+    assert filename.endswith(".txt")
+    query_terms_file = Path("./benchmark_queries") / filename
+    with open(query_terms_file, "r") as f:
+        queries = f.readlines()
+    assert queries
+    result = [query.strip() for query in queries]
+    return result
 
 
-async def vector_search(client: AsyncElasticsearch, query: str) -> None:
-    query_vector = MODEL.encode(query.lower())
-    response = await client.search(
-        index="wines",
-        size=10,
-        query={
-            "script_score": {
-                "query": {"match_all": {}},
-                "script": {
-                    "source": "cosineSimilarity(params.queryVector, 'vector') + 1.0",
-                    "params": {
-                        "queryVector": query_vector,
-                    },
-                },
-            }
-        },
-        sort={"points": {"order": "desc"}},
-        _source=["id", "title", "description", "points", "price"],
-    )
-    result = response["hits"].get("hits")
-    if result:
-        data = [item["_source"] for item in result]
-        df = pl.from_dicts(data)
-        print(f"Vector search result\n{df}")
+async def async_get(
+    session: aiohttp.ClientSession,
+    url: str,
+    params: dict[str, str] | None = None,
+) -> aiohttp.ClientResponse | None:
+    """Helper method for async GET request with error handling for empty responses"""
+    assert url is not None
+    async with session.get(url, params=params) as response:
+        try:
+            response = await response.json()
+            return response
+        except ContentTypeError:
+            return None
+
+
+async def run_search(queries: list[str], url: str):
+    async with aiohttp.ClientSession() as http_session:
+        with Timer(text="Ran search in: {:.4f} sec"):
+            tasks = [
+                asyncio.create_task(async_get(http_session, url, params={"query": query}))
+                for query in queries
+            ]
+            result = await asyncio.gather(*tasks)
+            # print the first result description for each query
+            for i, item in enumerate(result):
+                print(f"Query [{queries[i]}]: {item[0]['description']}")
 
 
 async def main():
-    client = await get_elastic_client()
-    assert await client.ping()
+    # FTS
+    fts_endpoint = f"http://{API_URL}:{API_PORT}/fts_search"
+    fts_queries = get_query_terms("keyword_terms.txt")
+    await run_search(fts_queries, fts_endpoint)
 
-    query = "tropical fruit"
-    await fts_search(client, query)
-    await vector_search(client, query)
+    print("\n" + "-" * 80 + "\n")
 
-    # Close client
-    await client.close()
+    # Vector search
+    vector_search_endpoint = f"http://{API_URL}:{API_PORT}/vector_search"
+    vector_search_queries = get_query_terms("vector_terms.txt")
+    await run_search(vector_search_queries, vector_search_endpoint)
 
 
 if __name__ == "__main__":
-    import asyncio
-
-    # Load a sentence transformer model for semantic similarity from a specified checkpoint
-    model_id = Settings().embedding_model_checkpoint
-    assert model_id, "Invalid embedding model checkpoint specified in .env file"
-    MODEL = SentenceTransformer(model_id)
-
     asyncio.run(main())
