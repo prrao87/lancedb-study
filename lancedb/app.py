@@ -57,10 +57,10 @@ async def root():
 # --- Search functions ---
 
 
-def _fts_search(request: Request, terms: str) -> list[SearchResult] | None:
+async def _fts_search(request: Request, terms: str) -> list[SearchResult] | None:
     # In FTS, we limit to a max of 10K points to be more in line with Elasticsearch
     search_result = (
-        request.app.table.search(terms, vector_column_name="to_vectorize")
+        request.app.table.search(terms, vector_column_name="description")
         .select(["id", "title", "description", "country", "variety", "price", "points"])
         .limit(10)
     ).to_pydantic(SearchResult)
@@ -69,7 +69,7 @@ def _fts_search(request: Request, terms: str) -> list[SearchResult] | None:
     return search_result
 
 
-def _vector_search(
+async def _vector_search(
     request: Request,
     terms: str,
 ) -> list[SearchResult] | None:
@@ -101,7 +101,7 @@ async def fts_search(
         description="Specify terms to search for in the variety, title and description"
     ),
 ) -> list[SearchResult] | None:
-    result = _fts_search(request, query)
+    result = await _fts_search(request, query)
     if not result:
         raise HTTPException(
             status_code=404,
@@ -121,7 +121,7 @@ async def vector_search(
         description="Specify terms to search for in the variety, title and description"
     ),
 ) -> list[SearchResult] | None:
-    result = _vector_search(request, query)
+    result = await _vector_search(request, query)
     if not result:
         raise HTTPException(
             status_code=404,
