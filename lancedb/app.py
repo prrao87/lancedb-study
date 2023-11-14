@@ -1,7 +1,9 @@
 """
 FastAPI app to serve search endpoints
 """
+import asyncio
 from collections.abc import AsyncGenerator
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from functools import lru_cache
 from pathlib import Path
@@ -13,6 +15,7 @@ from sentence_transformers import SentenceTransformer
 
 import lancedb
 
+executor = ThreadPoolExecutor(max_workers=20)
 
 @lru_cache()
 def get_settings():
@@ -56,7 +59,7 @@ async def root():
 # --- Search functions ---
 
 
-async def _fts_search(request: Request, terms: str) -> list[SearchResult] | None:
+def _fts_search(request: Request, terms: str) -> list[SearchResult] | None:
     # In FTS, we limit to a max of 10K points to be more in line with Elasticsearch
     search_result = (
         request.app.table.search(terms, vector_column_name="description")
@@ -68,7 +71,7 @@ async def _fts_search(request: Request, terms: str) -> list[SearchResult] | None
     return search_result
 
 
-async def _vector_search(
+def _vector_search(
     request: Request,
     terms: str,
 ) -> list[SearchResult] | None:
@@ -100,7 +103,8 @@ async def fts_search(
         description="Specify terms to search for in the variety, title and description"
     ),
 ) -> list[SearchResult] | None:
-    result = await _fts_search(request, query)
+    loop = asyncio.get_running_loop()
+    result = await loop.run_in_executor(executor, _fts_search, request, query)
     if not result:
         raise HTTPException(
             status_code=404,
@@ -120,7 +124,8 @@ async def vector_search(
         description="Specify terms to search for in the variety, title and description"
     ),
 ) -> list[SearchResult] | None:
-    result = await _vector_search(request, query)
+    loop = asyncio.get_running_loop()
+    result = await loop.run_in_executor(executor, _vector_search, request, query)
     if not result:
         raise HTTPException(
             status_code=404,
