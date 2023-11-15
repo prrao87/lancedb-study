@@ -1,23 +1,20 @@
 # LanceDB
 
-The Python API for LanceDB is used to ingest the data and build the index.
+The LanceDB Python client is used to load, index and query the data.
 
-## Embedding model selection
+## Ingest data and create FTS and ANN indexes
 
-The Hugging Face [model hub](https://huggingface.co/models) is a good starting point to learn which embedding models are available, including their names and how to access them. For ease of use, the `sentence-transformers` library is used in this repo to expose the embedding models to LanceDB and generating the embeddings.
+The data ingestion and index creation can be run as follows.
 
-The following open source embedding models for English are exposed through the `sentence-transformers` library (in order of their performance on the [MTEB leaderboard](https://huggingface.co/spaces/mteb/leaderboard)):
+```sh
+# Ingest full dataset and build FTS and ANN index
+python index.py
+```
 
-| Model class | Model name | Dimensions | Sequence length
-|:---:|:---|:---:|:---:
-BAAI General (Flag) Embedding | `BAAI/bge-large-en-v1.5` | 1024 | 512
-BAAI General (Flag) Embedding | `BAAI/bge-base-en-v1.5` | 768 | 512
-Alibaba General Text Embeddings | `thenlper/gte-large` | 1024 | 512
-Alibaba General Text Embeddings | `thenlper/gte-base` | 768 | 512
-BAAI General (Flag) Embedding | `BAAI/bge-small-en-v1.5` | 384 | 512
-Alibaba General Text Embeddings | `thenlper/gte-small` | 384 | 512
-SentenceBERT | `sentence-transformers/all-MiniLM-L12-v2` | 384 | 256
-SentenceBERT | `sentence-transformers/all-MiniLM-L6-v2` | 384 | 256
+```sh
+# Ingest partial dataset per limit argument and build FTS and ANN index
+python index.py --limit 1000
+```
 
 ## Run FastAPI app to serve query results
 
@@ -32,42 +29,56 @@ The FTS endpoint can be accessed at `http://localhost:8000/fts_search` and the v
 > [!NOTE]
 > Make sure that the FastAPI server is running before running the following steps.
 
+## Run serial benchmark
 
-### Ingest data and create FTS and ANN indexes
-
-The data ingestion and index creation can be run as follows.
-
-```sh
-# Ingest full dataset and build FTS and ANN index
-python index.py
-```
+The first benchmark is a serial one, where a series of (randomly selected) queries are run sequentially. The FTS serial benchmark can be run as follows.
 
 ```sh
-# Ingest partial dataset per limit argument and build FTS and ANN index
-python index.py --limit 1000
+python benchmark_serial.py --search fts --limit 10
+python benchmark_serial.py --search fts --limit 100
+python benchmark_serial.py --search fts --limit 1000
+python benchmark_serial.py --search fts --limit 10000
 ```
 
-### Run benchmark queries for full-text and vector search
+This command runs 10, 100, 1000 and 1000 FTS queries sequentially by randomly selecting any of the 10 queries from the `benchmark_queries/keyword_terms.txt`.
 
-A script has been provided that can run either full-text search (FTS) or vector search (ANN) queries. The FTS benchmark can be run as follows.
+The vector search serial benchmark can be run as follows.
 
 ```sh
-python run_benchmark.py --search fts --limit 1000
+python benchmark_serial.py --search vector --limit 10
+python benchmark_serial.py --search vector --limit 100
+python benchmark_serial.py --search vector --limit 1000
+python benchmark_serial.py --search vector --limit 10000
 ```
 
-This command runs 1000 FTS queries by randomly selecting any of the 10 queries from the `benchmark_queries/keyword_terms.txt`.
+This command runs 10, 100, 1000 and 1000 vector search queries by randomly selecting any of the 10 queries from the `benchmark_queries/vector_terms.txt`.
 
-The vector search benchmark can be run as follows.
+## Run concurrent benchmark
+
+The next benchmark is a concurrent one, where a series of (randomly selected) queries are run on multiple threads. The FTS concurrent benchmark can be run as follows.
 
 ```sh
-python run_benchmark.py --search vector --limit 1000
+python benchmark_concurrent.py --search fts --limit 10
+python benchmark_concurrent.py --search fts --limit 100
+python benchmark_concurrent.py --search fts --limit 1000
+python benchmark_concurrent.py --search fts --limit 10000
 ```
 
-This command runs 1000 vector search queries by randomly selecting any of the 10 queries from the `benchmark_queries/vector_terms.txt`.
+The vector search concurrent benchmark can be run as follows.
 
-### Inspect the FTS and vector search results
+```sh
+python benchmark_concurrent.py --search vector --limit 10
+python benchmark_concurrent.py --search vector --limit 100
+python benchmark_concurrent.py --search vector --limit 1000
+python benchmark_concurrent.py --search vector --limit 10000
+```
 
-Another script, `query.py` is provided to run the FTS and vector search benchmark queries for qualitative inspection.
+> [!NOTE]
+> Because LanceDB doesn't yet (as of this writing) have an async Python client, the concurrent benchmark is run via multi-threading in Python. This is not as efficient as pure async (non-blocking) requests as is done in Elasticsearch, but is much faster than the serial benchmark.
+
+## Inspect search results
+
+A script `query.py` is provided to run the FTS and vector search benchmark queries for qualitative inspection. This script must be run while the FastAPI server that serves query results is up and running.
 
 ```sh
 python query.py

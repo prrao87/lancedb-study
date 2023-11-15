@@ -1,6 +1,6 @@
 # Elasticsearch
 
-[Elasticsearch](https://www.elastic.co/what-is/elasticsearch) is a distributed search and analytics engine for semi-structured and unstructured data. It is the backbone of many search engines in production today via its Lucene-based full-text search capabilities. Recently, Elasticsearch also added support for vector search ANN (HNSW) index, which is also used in this section.
+[Elasticsearch](https://www.elastic.co/what-is/elasticsearch) is a distributed search and analytics engine for semi-structured and unstructured data. It is the backbone of many search engines in production today via its Lucene-based full-text search capabilities. Recently, Elasticsearch also added support for vector search ANN (HNSW) index, which is also showcased in this section.
 
 ## Set up Elasticsearch container
 
@@ -61,7 +61,7 @@ The following snippet shows how this is specified in the `mapping/mappings.json`
 
 The first section under `"settings"` creates a custom analyzer that will analyzes the text in the index via its lowercased keywords. The second section under `"mappings"` defines the properties of the vector index - in this case we define a fixed-length 384-dimensional vector that will be indexed and searched via cosine similarity.
 
-## Ingest the data
+## Ingest data
 
 The first step is to ingest the wine reviews dataset into Elasticsearch. Data is asynchronously ingested into the Elasticsearch database through the scripts in the `scripts` directory.
 
@@ -83,41 +83,56 @@ The FTS endpoint can be accessed at `http://localhost:8000/fts_search` and the v
 > [!NOTE]
 > Make sure that the FastAPI server is running before running the following steps.
 
-### Ingest data for indexing
+## Run serial benchmark
 
-The data ingestion can be run as follows.
-
-```sh
-# Ingest full dataset
-python index.py
-```
+The first benchmark is a serial one, where a series of (randomly selected) queries are run sequentially. The FTS serial benchmark can be run as follows.
 
 ```sh
-# Ingest partial dataset per limit argument
-python index.py --limit 1000
+python benchmark_serial.py --search fts --limit 10
+python benchmark_serial.py --search fts --limit 100
+python benchmark_serial.py --search fts --limit 1000
+python benchmark_serial.py --search fts --limit 10000
 ```
 
-### Run benchmark queries for full-text and vector search
+This command runs 10, 100, 1000 and 1000 FTS queries sequentially by randomly selecting any of the 10 queries from the `benchmark_queries/keyword_terms.txt`.
 
-A script has been provided that can run either full-text search (FTS) or vector search (ANN) queries. The FTS benchmark can be run as follows.
+The vector search serial benchmark can be run as follows.
 
 ```sh
-python run_benchmark.py --search fts --limit 1000
+python benchmark_serial.py --search vector --limit 10
+python benchmark_serial.py --search vector --limit 100
+python benchmark_serial.py --search vector --limit 1000
+python benchmark_serial.py --search vector --limit 10000
 ```
 
-This command runs 1000 FTS queries by randomly selecting any of the 10 queries from the `benchmark_queries/keyword_terms.txt`.
+This command runs 10, 100, 1000 and 1000 vector search queries by randomly selecting any of the 10 queries from the `benchmark_queries/vector_terms.txt`.
 
-The vector search benchmark can be run as follows.
+## Run concurrent benchmark
+
+The next benchmark is a concurrent one, where a series of (randomly selected) queries are run on multiple threads. The FTS concurrent benchmark can be run as follows.
 
 ```sh
-python run_benchmark.py --search vector --limit 1000
+python benchmark_concurrent.py --search fts --limit 10
+python benchmark_concurrent.py --search fts --limit 100
+python benchmark_concurrent.py --search fts --limit 1000
+python benchmark_concurrent.py --search fts --limit 10000
 ```
 
-This command runs 1000 vector search queries by randomly selecting any of the 10 queries from the `benchmark_queries/vector_terms.txt`.
+The vector search concurrent benchmark can be run as follows.
 
-### Inspect the FTS and vector search results
+```sh
+python benchmark_concurrent.py --search vector --limit 10
+python benchmark_concurrent.py --search vector --limit 100
+python benchmark_concurrent.py --search vector --limit 1000
+python benchmark_concurrent.py --search vector --limit 10000
+```
 
-Another script, `query.py` is provided to run the FTS and vector search benchmark queries for qualitative inspection.
+> [!NOTE]
+> Elasticsearch offers a fully non-blocking async Python client which is used in this concurrent benchmark.
+
+## Inspect search results
+
+A script `query.py` is provided to run the FTS and vector search benchmark queries for qualitative inspection. This script must be run while the FastAPI server that serves query results is up and running.
 
 ```sh
 python query.py
