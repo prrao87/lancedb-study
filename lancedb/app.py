@@ -16,6 +16,7 @@ import lancedb
 
 executor = ThreadPoolExecutor(max_workers=4)
 
+
 @lru_cache()
 def get_settings():
     # Use lru_cache to avoid loading .env file for every request
