@@ -73,7 +73,7 @@ python benchmark_concurrent.py --search vector --limit 1000
 python benchmark_concurrent.py --search vector --limit 10000
 ```
 
-> ![NOTE]
+> [!NOTE]
 > Because LanceDB doesn't yet (as of this writing) have an async Python client, the concurrent benchmark is run via multi-threading in Python. This is not as efficient as pure async (non-blocking) requests as is done in Elasticsearch, but is much faster than the serial benchmark.
 
 ## Inspect search results

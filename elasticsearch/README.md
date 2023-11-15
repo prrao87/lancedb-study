@@ -127,7 +127,7 @@ python benchmark_concurrent.py --search vector --limit 1000
 python benchmark_concurrent.py --search vector --limit 10000
 ```
 
-> ![NOTE]
+> [!NOTE]
 > Elasticsearch offers a fully non-blocking async Python client which is used in this concurrent benchmark.
 
 ## Inspect search results
