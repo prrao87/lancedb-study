@@ -1,3 +1,7 @@
+"""
+Run this script to benchmark the concurrent search performance of the FTS and vector search
+via REST API endpoints.
+"""
 import argparse
 import asyncio
 import random
