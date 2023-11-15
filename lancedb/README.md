@@ -29,7 +29,8 @@ uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 
 The FTS endpoint can be accessed at `http://localhost:8000/fts_search` and the vector search endpoint can be accessed at `http://localhost:8000/vector_search`.
 
-**Make sure that the FastAPI server is running before running the following steps.**
+> [!NOTE]
+> Make sure that the FastAPI server is running before running the following steps.
 
 
 ### Ingest data and create FTS and ANN indexes

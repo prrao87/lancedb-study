@@ -6,7 +6,6 @@ from collections.abc import AsyncGenerator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from functools import lru_cache
-from pathlib import Path
 
 from config import Settings
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -15,7 +14,7 @@ from sentence_transformers import SentenceTransformer
 
 import lancedb
 
-executor = ThreadPoolExecutor(max_workers=20)
+executor = ThreadPoolExecutor(max_workers=4)
 
 @lru_cache()
 def get_settings():
