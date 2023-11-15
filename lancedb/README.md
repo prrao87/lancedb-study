@@ -51,7 +51,7 @@ python benchmark_serial.py --search vector --limit 1000
 python benchmark_serial.py --search vector --limit 10000
 ```
 
-This command runs 1000 vector search queries by randomly selecting any of the 10 queries from the `benchmark_queries/vector_terms.txt`.
+This command runs 10, 100, 1000 and 1000 vector search queries by randomly selecting any of the 10 queries from the `benchmark_queries/vector_terms.txt`.
 
 ## Run concurrent benchmark
 
