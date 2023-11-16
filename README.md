@@ -53,6 +53,8 @@ For this study, the `BAAI/bge-small-en-v1.5` model with 384 dimensions is used.
 
 ## Benchmark results
 
+LanceDB is clearly the fastest in terms of query throughput for the vector search use case, and is also faster than Elasticsearch for the full-text search use case when using multiple threads concurrently. In the future, if an async (non-blocking) Python client is available for LanceDB, the throughput for LanceDB for FTS is expected to be even higher.
+
 > [!NOTE]
 > * The search space comprises 129,971 wine review descriptions in either LanceDB or Elasticsearch
 > * The vector dimensionality is 384
