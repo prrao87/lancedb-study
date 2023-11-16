@@ -39,6 +39,7 @@ python -m pip install -r requirements.txt
 > * The search space comprises 129,971 wine review descriptions in either LanceDB or Elasticsearch
 > * The queries are randomly sampled from a list of 10 example queries for FTS and vector search, and run for 10, 100, 1000 and 10000 random samples
 > * The vector dimensionality for the embeddings is 384 (`BAAI/bge-small-en-v1.5`)
+> * Vector search in Elasticsearch is via Lucene-HNSW, and in LanceDB via IVF-PQ
 > * The distance metric for vector search is cosine similarity
 > * The run times reported are an average over 3 runs
 
@@ -46,10 +47,10 @@ python -m pip install -r requirements.txt
 
 Case | Elasticsearch (QPS) | LanceDB (QPS)
 :---|---:|---:
-FTS (serial) | 399.8 | **468.9**
-FTS (concurrent) | **1539.0** | 528.9
-Vector search (serial) | 50.7 | **185.1**
-Vector search (concurrent) | 50.7 | **139.6**
+FTS: Serial | 399.8 | **468.9**
+FTS: Concurrent | **1539.0** | 528.9
+Vector search: Serial | 11.9 | **54.0**
+Vector search: Concurrent | 50.7 | **71.6**
 
 ### Discussion
 
