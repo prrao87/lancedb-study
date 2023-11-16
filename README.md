@@ -53,17 +53,34 @@ For this study, the `BAAI/bge-small-en-v1.5` model with 384 dimensions is used.
 
 ## Benchmark results
 
-* LanceDB is clearly the fastest in terms of QPS (queries per second) for the vector search use case, and is also faster than Elasticsearch for the full-text search use case when using multiple threads concurrently.
+> [!NOTE]
+> * The numbers below are from a 2022 M2 Macbook Pro with 16GB RAM
+> * The search space comprises 129,971 wine review descriptions in either LanceDB or Elasticsearch
+> * The queries are randomly sampled from a list of 10 example queries for FTS and vector search, and run for 10, 100, 1000 and 10000 random samples
+> * The vector dimensionality for the embeddings is 384 (`BAAI/bge-small-en-v1.5`)
+> * The distance metric for vector search is cosine similarity
+> * The run times reported are an average over 3 runs
+
+### Summary of results for 10,000 random queries:
+
+Case | Elasticsearch (QPS) | LanceDB (QPS)
+:---|---:|---:
+FTS (serial) | 399.8 | **468.9**
+FTS (concurrent) | **1539.0** | 528.9
+Vector search (serial) | 50.7 | **185.1**
+Vector search (concurrent) | 50.7 | **139.6**
+
+### Discussion
+
+* Via Python, LanceDB is clearly faster than Elasticsearch in terms of QPS (queries per second) for the vector search use case, and is also faster for the full-text search use case when using multiple threads concurrently.
 * Elasticsearch is faster in terms of QPS **only** for the FTS use case, specifically in the concurrent scenario because it uses a non-blocking async client (unlike LanceDB).
 * In the future, if an async (non-blocking) Python client is available for LanceDB, the throughput for LanceDB for FTS is expected to be even higher.
 
-> [!NOTE]
-> * The search space comprises 129,971 wine review descriptions in either LanceDB or Elasticsearch
-> * The vector dimensionality is 384
-> * The benchmark is run on a 2022 M2 Macbook Pro with 16GB RAM and 8-core CPU
-> * The run times reported are an average over 3 runs
-
 ### Serial Benchmark
+
+The serial benchmark shown below involves sequentially running queries in a sync for loop in Python. This isn't representative of a realistic situation, but is useful to understand the performance of the underlying search engines in each case (Lucene for Elasticsearch and Tantivy for LanceDB).
+
+More details on this will be discussed in a blog post.
 
 #### Full-text search (FTS)
 
@@ -85,6 +102,10 @@ Queries | Elasticsearch (sec)| Elasticsearch (QPS) | LanceDB (sec) | LanceDB (QP
 
 ### Concurrent Benchmark
 
+> [!NOTE]
+> * The concurrency in Elasticsearch is achieved through its async client
+> * The concurrency in LanceDB is achieved through Python's `multiprocessing` library on 4 worker threads (a higher number of threads resulted in slower performance).
+
 #### Full-text search (FTS)
 
 Queries | Elasticsearch (sec)| Elasticsearch (QPS) | LanceDB (sec) | LanceDB (QPS)
@@ -96,7 +117,7 @@ Queries | Elasticsearch (sec)| Elasticsearch (QPS) | LanceDB (sec) | LanceDB (QP
 
 #### Vector search
 
-Queries | Elasticsearch (sec)| Elasticsearch (QPS) | LanceDB (sec) | LanceDB (QPS)
+Queries | Elasticsearch (sec)| Elasticsearch (QPS) | LanceDB, 4 threads (sec) | LanceDB, 4 threads (QPS)
 :---:|:---:|:---:|:---:|:---:
 10 | 0.2896 | 34.5 | 0.1409 | **71.0**
 100 | 2.5275 | 39.6 | 1.3367 | **74.8**
