@@ -37,11 +37,11 @@ python -m pip install -r requirements.txt
 > [!NOTE]
 > * The numbers below are from a 2022 M2 Macbook Pro with 16GB RAM
 > * The search space comprises 129,971 wine review descriptions in either LanceDB or Elasticsearch
-> * The queries are randomly sampled from a list of 10 example queries for FTS and vector search, and run for 10, 100, 1000 and 10000 random samples
+> * The queries are randomly sampled from a list of 10 example queries for FTS and vector search, and run for 10, 100, 1000 and 10000 random queries
 > * The vector dimensionality for the embeddings is 384 (`BAAI/bge-small-en-v1.5`)
-> * Vector search in Elasticsearch is via Lucene-HNSW, and in LanceDB via IVF-PQ
-> * The distance metric for vector search is cosine similarity
-> * The run times reported are an average over 3 runs
+> * Vector search in Elasticsearch is based on Lucene-HNSW, and in LanceDB, is based on IVF-PQ
+> * The distance metric for vector search is cosine similarity in either DB
+> * The run times reported (and QPS computed) are an average over 3 runs
 
 ### Summary of results for 10,000 random queries:
 
@@ -54,13 +54,13 @@ Vector search: Concurrent | 50.7 | **71.6**
 
 ### Discussion
 
-* Via Python, LanceDB is clearly faster than Elasticsearch in terms of QPS (queries per second) for the vector search use case, and is also faster for the full-text search use case when using multiple threads concurrently.
-* Elasticsearch is faster in terms of QPS **only** for the FTS use case, specifically in the concurrent scenario because it uses a non-blocking async client (unlike LanceDB).
+* Via their Python clients, LanceDB is clearly faster than Elasticsearch in terms of QPS (queries per second) for the vector search use case, and is also faster for the full-text search use case when using multiple threads concurrently.
+* Elasticsearch is faster **only** for the FTS use case, specifically in the concurrent scenario likely because it uses a non-blocking async client (unlike LanceDB, for now).
 * In the future, if an async (non-blocking) Python client is available for LanceDB, the throughput for LanceDB for FTS is expected to be even higher.
 
 ### Serial Benchmark
 
-The serial benchmark shown below involves sequentially running queries in a sync for loop in Python. This isn't representative of a realistic situation, but is useful to understand the performance of the underlying search engines in each case (Lucene for Elasticsearch and Tantivy for LanceDB).
+The serial benchmark shown below involves sequentially running queries in a sync for loop in Python. This isn't representative of a realistic use case in production, but is useful to understand the performance of the underlying search engines in each case (Lucene for Elasticsearch and Tantivy for LanceDB).
 
 More details on this will be discussed in a blog post.
 
@@ -83,6 +83,8 @@ Queries | Elasticsearch (sec)| Elasticsearch (QPS) | LanceDB (sec) | LanceDB (QP
 10000 | 842.9494 | 11.9 | 185.0582 | **54.0**
 
 ### Concurrent Benchmark
+
+The concurrent benchmark is designed to replicate a realistic use case for LanceDB or Elasticsearch - where multiple queries arrive at the same time, and the REST API on top of the DB has to handle asynchronous requests.
 
 > [!NOTE]
 > * The concurrency in Elasticsearch is achieved through its async client
