@@ -99,23 +99,22 @@ Query [+blueberry +mint]: Exotic aromas of cardamom, blueberry and spiced curran
 Query [+beef +lamb]: Tarry, savory notes of dried beef, soy, charred lamb and underlying blackberry combine for a nose that screams umami. The palate carries a similar effect of grilled, lavender-covered lamb shank, black peppercorns and black sesame.
 Query [+shellfish +seafood]: Really? A five-buck Oregon Riesling? It's light, lemony and tart, but it's real wine, simple and plain, yet fine with shellfish or other light seafood.
 Query [+vegetable +fish]: Clean mineral notes blend nicely with fresh berry fruit, red rose and raspberry. This is a simple but genuine wine that would pair with roasted fish or vegetable risotto.
-Ran search in: 0.9256 sec
+Ran search in: 1.3454 sec
 
 --------------------------------------------------------------------------------
 # Vector search results
 
-Query [vanilla and a hint of smokiness]: Vanilla and maple aromas lead to overtly fruity red cherry flavors with a touch of sweetness and a soft texture. It's pleasant to drink for those looking for a soft touch, with very mild acidity and no tannin to speak of.
-Query [rich and sweet dessert wine with balanced tartness]: This richly extracted dessert wine boasts a dark, inky appearance and aromas of exotic spice, nutmeg, cinnamon, dark chocolate, carob, roasted chestnut and mature blackberries. It is smooth, well textured and exceedingly rich on the close with loads of power, personality and persistency.
-Query [cherry and plum aromas]: Earthy, herbal aromas of cherry and plum come with a funky note of wet dog fur. Hailing from a cool, wet vintage, this is showing shearing acidity and abrasiveness. Quick-hitting raspberry, plum and red-currant flavors end with edginess and snap. This is 40% each Cabernets Sauvignon and Franc, with 20% Monastrell.
-Query [right balance of citrus acidity]: True to its name, this blend is tangy in acidity. Flavorwise, it's simple, with pleasant orange, peach, lemon and vanilla flavors that finish a little sweet.
-Query [grassy aroma with apple and tropical fruit]: Spring flower aromas mingle with a hint of orchard fruit. On the lean, extremely simple palate, yellow apple fruit mixes with a lemon zest note.
-Query [bitter with a dry aftertaste]: Even at a considerable 15 g/l of residual sugar, this wine comes across as almost dry, thanks to its crisp acidity. Scents of petrichor, green apple and lime start things off, while those razor-sharp acids show up on the finish. Drink now.
-Query [sweet with a hint of chocolate and berry flavor]: A bouquet of cherry, white chocolate and juniper berry sets the stage for flavors of raspberry, blackberry, blueberry pie and baking spices. It is smooth in the mouth, with a sense of soft sweetness that is neither overpowering nor cloying, bolstered by a pervasive backbone of acidity.
-Query [acidic on the palate with oak aromas]: The oaky smoke is quite powerful on the nose, which also shows vanilla dust and lime juice. The palate is anything but austere, full of toast, caramelized apples and smoked fruits. A line of citrus acidity stops it from becoming flabby, but this is definitely for the oak lovers crowd.
-Query [balanced tannins and dry and fruity composition]: There is a good core of tannin here, the fruit sweet plums and ripe tannins, relatively soft and easy. Only that kernel of tannin offers some aging possibility.
-Query [peppery undertones that pairs with steak or barbecued meat]: An easy red blend, this would pair well with hamburgers or grilled meats. Notes of cherry and blackberry accent the palate.
-Ran search in: 0.2470 sec
-
+Query [vanilla and a hint of smokiness]: Drenched in luxurious, almost sweet fruit flavors, this tempting and delicious wine is full bodied. Ripe in aromas and on the palate, it creates a vivid and warming cherry-pie effect on the senses, and is undeniably tasty.
+Query [rich and sweet dessert wine with balanced tartness]: Not a lot of wood scents are showing, though the aging took place in roughly 50% new oak barrels. This has forward, pretty black fruits, juicy acids, some still-unresolved astringency, and aromatically it incorporates a nice herbal note, reminiscent of green tea. Still too young to drink, and the rating could go higher with more bottle age.
+Query [cherry and plum aromas]: Part of the select group of impressive wines from this year, this wine is ripe, rich and firmly structured. Black-currant fruitiness forms the base for solid tannins and a concentrated texture. The hints of wood-aging need to soften. Drink from 2022.
+Query [right balance of citrus acidity]: This straightforward wine isn't particularly Cabernet-like, but it is good and sound. With furry tannins, it has a distinct sweetness of raisins and blackberry jam, as well as lots of brambly Zinny spices. Drink up.
+Query [grassy aroma with apple and tropical fruit]: This is the finest Cheval Blanc for many years. It is, quite simply, magnificent. The wine shows the greatness of Cabernet Franc in the vintage, with 57% of the variety in the blend. It is beautifully structured and perfumed, with velvety tannins, balanced acidity and swathes of black-currant and black-cherry fruits. It's well on course to becoming a legendary wine.
+Query [bitter with a dry aftertaste]: The wine is firm with tannins as well as black-currant fruit. It does have a juicy edge that will develop well as it matures. Drink this potentially attractive wine from 2018.
+Query [sweet with a hint of chocolate and berry flavor]: Exotic, complex and vivid aromas, rich and fulfilling fruit flavors and a hefty structure form a great package in this full-bodied and extroverted wine. The winemaker allowed wild yeast and kept 30% whole clusters in the fermentation, then aged it in neutral barrels.
+Query [acidic on the palate with oak aromas]: A lovely young Cab, rich and balanced, and with the elegance you expect from this producer. Made from all 5 Bordeaux varieties, with a drop of Syrah, the wine is potent in red and black currant, blackberry and new oak flavors, with sweetly ripe tannins. Delicious now, it should develop through 2015.
+Query [balanced tannins and dry and fruity composition]: A 100% varietal Pinot, this wine has a faint bouquet of ripe black cherry and blackberry, exuding full flavor and body. Smooth, the oak is low impact, providing extra weight and sustenance while remaining balanced with the fruit.
+Query [peppery undertones that pairs with steak or barbecued meat]: This arresting wine has aromas of forest floor, strawberry and cola. It's light and lithe in feel yet still richly flavored with a lingering finish.
+Ran search in: 0.1876 sec
 ```
 
 
