@@ -1,5 +1,7 @@
 # LanceDB benchmark: Full-text and vector search performance
 
+Code for the benchmark study described in this [blog post](https://thedataquarry.com/posts/embedded-db-3/).
+
 [LanceDB](https://github.com/lancedb/lancedb) is an open source, embedded and developer-friendly vector database. Some key features about LanceDB that make it extremely valuable are listed below, among many others listed on their GitHub repo.
 
 * Incredibly lightweight (no DB servers to manage), because it runs entirely in-process with the application
