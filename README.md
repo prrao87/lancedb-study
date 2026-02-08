@@ -111,13 +111,12 @@ uv run uvicorn elasticsearch.app:app --host 0.0.0.0 --port 8000
 uv run elasticsearch/bench_api.py
 ```
 
-### Results (Direct Async Client)
+## Result #1: Direct Async Client
 
 This benchmark mode runs direct async client calls against LanceDB / Elasticsearch. It isolates search-engine + embedding/runtime behavior without FastAPI overhead.
 
 ### LanceDB
 
-Loading weights: 100%|█| 134/134 [00:00<00:00, 7012.05it/s, Materializing param=layers.21.mlp_norm.weigh
 Averaged metrics over best-of-3 direct-client runs for 1000 queries per search type (fts, vector).
 | search | queries | runs | success_avg | elapsed_s_avg | qps_avg | p50_ms_avg | p95_ms_avg | p99_ms_avg | max_concurrency | seed | warmup_queries |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -132,7 +131,7 @@ Averaged metrics over best-of-3 direct-client runs for 1000 queries per search t
 | fts | 1000 | 3 | 1000.00 | 0.1681 | 5948.88 | 2.59 | 4.07 | 5.25 | 16 | 37 | 10 |
 | vector | 1000 | 3 | 1000.00 | 10.1893 | 98.14 | 110.37 | 212.83 | 222.35 | 16 | 37 | 10 |
 
-## Async API Bench (FastAPI)
+## Result #2: Through FastAPI Endpoints
 
 This benchmark mode runs requests through FastAPI endpoints over HTTP, mimicking a scenario in the real world where we would typically integrate the search engine as part of a larger stack. In such cases, it makes more sense to measure end-to-end service behavior, even if it introduces a small additional overhead due to the REST API.
 
