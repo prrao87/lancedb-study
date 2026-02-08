@@ -156,7 +156,7 @@ async def run_benchmark(args: argparse.Namespace) -> None:
     table = await db.open_table("wines")
 
     print(
-        f"Averaged metrics over best-of-{NUM_TRIALS} direct-client runs "
+        f"Average metrics over {NUM_TRIALS} direct-client runs "
         f"for {NUM_QUERIES} queries per search type (fts, vector)."
     )
     print(

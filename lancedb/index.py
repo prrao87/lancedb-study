@@ -37,7 +37,7 @@ async def main() -> None:
     args = parser.parse_args()
 
     settings = get_settings()
-    db_uri = Path(__file__).resolve().parents[0] / settings.lancedb_dir
+    db_uri = Path(__file__).resolve().parent / settings.lancedb_dir
     db = await lancedb.connect_async(str(db_uri))
     table = await db.open_table("wines")
 

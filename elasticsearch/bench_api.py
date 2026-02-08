@@ -114,7 +114,7 @@ def average_metrics(metrics_list: list[dict[str, float]]) -> dict[str, float]:
 
 async def run_benchmark(args: argparse.Namespace) -> None:
     print(
-        f"Averaged metrics over best-of-{NUM_TRIALS} runs "
+        f"Averaged metrics over {NUM_TRIALS} runs "
         f"for {NUM_QUERIES} queries per search type (fts, vector)."
     )
 
