@@ -1,73 +1,71 @@
-"""
-Run queries for full-text search and vector search and print out the results for inspection
+"""Run fixed FTS and vector queries for qualitative inspection."""
 
-Requires that a FastAPI server with search endpoints is running at the specified URL on port 8000
-"""
 import asyncio
 from pathlib import Path
-from typing import Any
+from time import perf_counter
 
 import aiohttp
 from aiohttp.client_exceptions import ContentTypeError
-from codetiming import Timer
-
-# Custom types
-JsonBlob = dict[str, Any]
 
 API_URL = "localhost"
 API_PORT = 8000
 
+QUERY_FILES = {
+    "fts": "keyword_terms.txt",
+    "vector": "vector_terms.txt",
+}
 
-def get_query_terms(filename: str) -> list[str]:
-    assert filename.endswith(".txt")
-    query_terms_file = Path("./benchmark_queries") / filename
-    with open(query_terms_file, "r") as f:
-        queries = f.readlines()
-    assert queries
-    result = [query.strip() for query in queries]
-    return result
+
+def get_query_terms(search_type: str) -> list[str]:
+    query_dir = Path(__file__).resolve().parents[1] / "bench_queries"
+    query_terms_file = query_dir / QUERY_FILES[search_type]
+    with open(query_terms_file, "r", encoding="utf-8") as f:
+        queries = [line.strip() for line in f.readlines() if line.strip()]
+    if not queries:
+        raise ValueError(f"No query terms found in {query_terms_file}")
+    return queries
 
 
 async def async_get(
     session: aiohttp.ClientSession,
     url: str,
     params: dict[str, str] | None = None,
-) -> aiohttp.ClientResponse | None:
-    """Helper method for async GET request with error handling for empty responses"""
-    assert url is not None
+) -> dict | list | None:
     async with session.get(url, params=params) as response:
+        if response.status != 200:
+            return None
         try:
-            response = await response.json()
-            return response
+            return await response.json()
         except ContentTypeError:
             return None
 
 
-async def run_search(queries: list[str], url: str):
-    async with aiohttp.ClientSession() as http_session:
-        with Timer(text="Ran search in: {:.4f} sec"):
-            tasks = [
-                asyncio.create_task(async_get(http_session, url, params={"query": query}))
-                for query in queries
-            ]
-            result = await asyncio.gather(*tasks)
-            # print the first result description for each query
-            for i, item in enumerate(result):
-                print(f"Query [{queries[i]}]: {item[0]['description']}")
+async def run_search(queries: list[str], endpoint: str) -> None:
+    async with aiohttp.ClientSession() as session:
+        start = perf_counter()
+        tasks = [
+            asyncio.create_task(async_get(session, endpoint, params={"query": query}))
+            for query in queries
+        ]
+        results = await asyncio.gather(*tasks)
+        elapsed = perf_counter() - start
+
+    for i, item in enumerate(results):
+        if item:
+            print(f"Query [{queries[i]}]: {item[0]['description']}")
+        else:
+            print(f"Query [{queries[i]}]: <no result>")
+    print(f"Ran search in: {elapsed:.4f} sec")
 
 
-async def main():
-    # FTS
+async def main() -> None:
     fts_endpoint = f"http://{API_URL}:{API_PORT}/fts_search"
-    fts_queries = get_query_terms("keyword_terms.txt")
-    await run_search(fts_queries, fts_endpoint)
+    await run_search(get_query_terms("fts"), fts_endpoint)
 
     print("\n" + "-" * 80 + "\n")
 
-    # Vector search
-    vector_search_endpoint = f"http://{API_URL}:{API_PORT}/vector_search"
-    vector_search_queries = get_query_terms("vector_terms.txt")
-    await run_search(vector_search_queries, vector_search_endpoint)
+    vector_endpoint = f"http://{API_URL}:{API_PORT}/vector_search"
+    await run_search(get_query_terms("vector"), vector_endpoint)
 
 
 if __name__ == "__main__":

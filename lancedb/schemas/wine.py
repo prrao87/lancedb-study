@@ -85,7 +85,7 @@ class LanceModelWine(BaseModel):
     taster_name: Optional[str]
     taster_twitter_handle: Optional[str]
     to_vectorize: str
-    vector: Vector(384)
+    vector: Vector(256)
 
 
 class SearchResult(LanceModel):

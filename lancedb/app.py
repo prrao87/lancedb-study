@@ -1,39 +1,49 @@
-"""
-FastAPI app to serve search endpoints
-"""
-import asyncio
+"""FastAPI app to serve LanceDB search endpoints."""
+
 from collections.abc import AsyncGenerator
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from functools import lru_cache
+import os
+from pathlib import Path
+import warnings
 
-from config import Settings
-from fastapi import FastAPI, HTTPException, Query, Request
-from schemas.wine import SearchResult
-from sentence_transformers import SentenceTransformer
+# Suppress verbose Rust-side Lance warnings in API logs.
+os.environ.setdefault("RUST_LOG", "error")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="lancedb")
 
 import lancedb
+from fastapi import FastAPI, HTTPException, Query, Request
+from sentence_transformers import SentenceTransformer
 
-executor = ThreadPoolExecutor(max_workers=4)
+try:
+    from .config import Settings
+    from .schemas.wine import SearchResult
+except ImportError:
+    from config import Settings
+    from schemas.wine import SearchResult
+
+RESULT_COLUMNS = ["id", "title", "description", "country", "variety", "price", "points"]
+FTS_RESULT_COLUMNS = [*RESULT_COLUMNS, "_score"]
+VECTOR_RESULT_COLUMNS = [*RESULT_COLUMNS, "_distance"]
+EMBEDDING_DIM = 256
 
 
 @lru_cache()
-def get_settings():
-    # Use lru_cache to avoid loading .env file for every request
+def get_settings() -> Settings:
     return Settings()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Async context manager for lancedb connection."""
+    """Async context manager for LanceDB connection."""
     settings = get_settings()
-    model_checkpoint = settings.embedding_model_checkpoint
-    app.model = SentenceTransformer(model_checkpoint)
-    # Define LanceDB client
-    db = lancedb.connect("./winemag")
-    app.table = db.open_table("wines")
+    app.model = SentenceTransformer(settings.embedding_model_checkpoint)
+    db_uri = Path(__file__).resolve().parent / settings.lancedb_dir
+    app.db = await lancedb.connect_async(str(db_uri))
+    app.table = await app.db.open_table("wines")
     print("Successfully connected to LanceDB")
     yield
+    app.db.close()
     print("Successfully closed LanceDB connection and released resources")
 
 
@@ -46,50 +56,52 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# --- app ---
-
 
 @app.get("/", include_in_schema=False)
-async def root():
+async def root() -> dict[str, str]:
     return {
         "message": "REST API for querying LanceDB database of 130k wine reviews from the Wine Enthusiast magazine"
     }
 
 
-# --- Search functions ---
-
-
-def _fts_search(request: Request, terms: str) -> list[SearchResult] | None:
-    # In FTS, we limit to a max of 10K points to be more in line with Elasticsearch
-    search_result = (
-        request.app.table.search(terms, vector_column_name="description")
-        .select(["id", "title", "description", "country", "variety", "price", "points"])
-        .limit(10)
-    ).to_pydantic(SearchResult)
-    if not search_result:
+async def _fts_search(request: Request, terms: str) -> list[dict[str, object]] | None:
+    query = await request.app.table.search(
+        terms,
+        query_type="fts",
+        fts_columns=["description"],
+    )
+    result_table = await query.select(FTS_RESULT_COLUMNS).limit(10).to_arrow()
+    if result_table.num_rows == 0:
         return None
-    return search_result
+    return result_table.to_pylist()
 
 
-def _vector_search(
-    request: Request,
-    terms: str,
-) -> list[SearchResult] | None:
-    query_vector = request.app.model.encode(terms.lower())
-    search_result = (
-        request.app.table.search(query_vector)
-        .metric("cosine")
-        .nprobes(20)
-        .select(["id", "title", "description", "country", "variety", "price", "points"])
+async def _vector_search(request: Request, terms: str) -> list[dict[str, object]] | None:
+    query_vector = request.app.model.encode(
+        f"search_query: {terms.strip().lower()}",
+        show_progress_bar=False,
+        convert_to_numpy=True,
+        truncate_dim=EMBEDDING_DIM,
+    )
+    if len(query_vector.shape) != 1 or query_vector.shape[0] != EMBEDDING_DIM:
+        raise ValueError(
+            f"Expected query embedding shape ({EMBEDDING_DIM},), got {query_vector.shape}"
+        )
+    query = await request.app.table.search(
+        query_vector.astype("float32", copy=False).tolist(),
+        vector_column_name="vector",
+        query_type="vector",
+    )
+    result_table = await (
+        query.distance_type("cosine")
+        .nprobes(10)
+        .select(VECTOR_RESULT_COLUMNS)
         .limit(10)
-    ).to_pydantic(SearchResult)
-
-    if not search_result:
+        .to_arrow()
+    )
+    if result_table.num_rows == 0:
         return None
-    return search_result
-
-
-# --- Endpoints ---
+    return result_table.to_pylist()
 
 
 @app.get(
@@ -102,9 +114,8 @@ async def fts_search(
     query: str = Query(
         description="Specify terms to search for in the variety, title and description"
     ),
-) -> list[SearchResult] | None:
-    loop = asyncio.get_running_loop()
-    result = await loop.run_in_executor(executor, _fts_search, request, query)
+) -> list[SearchResult]:
+    result = await _fts_search(request, query)
     if not result:
         raise HTTPException(
             status_code=404,
@@ -123,9 +134,8 @@ async def vector_search(
     query: str = Query(
         description="Specify terms to search for in the variety, title and description"
     ),
-) -> list[SearchResult] | None:
-    loop = asyncio.get_running_loop()
-    result = await loop.run_in_executor(executor, _vector_search, request, query)
+) -> list[SearchResult]:
+    result = await _vector_search(request, query)
     if not result:
         raise HTTPException(
             status_code=404,
