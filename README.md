@@ -117,7 +117,7 @@ This benchmark mode runs direct async client calls against LanceDB / Elasticsear
 
 ### LanceDB
 
-Averaged metrics over best-of-3 direct-client runs for 1000 queries per search type (fts, vector).
+Averaged metrics over 3 direct-client runs for 1000 queries per search type (fts, vector).
 | search | queries | runs | success_avg | elapsed_s_avg | qps_avg | p50_ms_avg | p95_ms_avg | p99_ms_avg | max_concurrency | seed | warmup_queries |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | fts | 1000 | 3 | 1000.00 | 0.6522 | 1534.34 | 10.18 | 14.28 | 15.92 | 16 | 37 | 10 |
@@ -125,7 +125,7 @@ Averaged metrics over best-of-3 direct-client runs for 1000 queries per search t
 
 ### Elasticsearch
 
-Averaged metrics over best-of-3 direct-client runs for 1000 queries per search type (fts, vector).
+Averaged metrics over 3 direct-client runs for 1000 queries per search type (fts, vector).
 | search | queries | runs | success_avg | elapsed_s_avg | qps_avg | p50_ms_avg | p95_ms_avg | p99_ms_avg | max_concurrency | seed | warmup_queries |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | fts | 1000 | 3 | 1000.00 | 0.1681 | 5948.88 | 2.59 | 4.07 | 5.25 | 16 | 37 | 10 |
@@ -137,7 +137,7 @@ This benchmark mode runs requests through FastAPI endpoints over HTTP, mimicking
 
 ### LanceDB
 
-Averaged metrics over best-of-3 runs for 1000 queries per search type (fts, vector).
+Averaged metrics over 3 runs for 1000 queries per search type (fts, vector).
 | search | queries | runs | success_avg | elapsed_s_avg | qps_avg | p50_ms_avg | p95_ms_avg | p99_ms_avg | max_concurrency | seed | warmup_queries |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | fts | 1000 | 3 | 1000.00 | 0.7470 | 1338.69 | 11.49 | 16.29 | 18.40 | 16 | 37 | 10 |
@@ -145,7 +145,7 @@ Averaged metrics over best-of-3 runs for 1000 queries per search type (fts, vect
 
 ### Elasticsearch
 
-Averaged metrics over best-of-3 runs for 1000 queries per search type (fts, vector).
+Averaged metrics over 3 runs for 1000 queries per search type (fts, vector).
 | search | queries | runs | success_avg | elapsed_s_avg | qps_avg | p50_ms_avg | p95_ms_avg | p99_ms_avg | max_concurrency | seed | warmup_queries |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | fts | 1000 | 3 | 1000.00 | 0.2899 | 3452.31 | 4.33 | 6.05 | 7.70 | 16 | 37 | 10 |
