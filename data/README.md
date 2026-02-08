@@ -24,4 +24,4 @@ For quick reference, a sample wine item in JSON format is shown below.
 
 ```
 
-The data is converted to a ZIP achive, and the code for this as well as the ZIP data is provided here for reference. There is no need to rerun the code to reproduce the results in the rest of the code base in this repo.
+The data is converted to a ZIP archive, and the code for this as well as the ZIP data is provided here for reference. There is no need to rerun the code to reproduce results in the rest of this repo.

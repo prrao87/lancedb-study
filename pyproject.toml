@@ -1,13 +1,19 @@
-[tool.ruff]
-
-# Set same as Black.
-line-length = 100
-indent-width = 4
-
-[tool.ruff.lint]
-select = ["I"]
-ignore = ["E501"]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
+[project]
+name = "lancedb-study"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiohttp>=3.13.3",
+    "elasticsearch>=9.3.0",
+    "fastapi>=0.128.4",
+    "lancedb>=0.29.1",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.12.0",
+    "rich>=14.3.2",
+    "sentence-transformers>=5.2.2",
+    "srsly>=2.5.2",
+    "transformers>=5.1.0",
+    "uvicorn>=0.40.0",
+]
