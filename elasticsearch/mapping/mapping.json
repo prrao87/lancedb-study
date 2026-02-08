@@ -103,7 +103,7 @@
             },
             "vector": {
                 "type": "dense_vector",
-                "dims": 384,
+                "dims": 256,
                 "index": true,
                 "similarity": "cosine"
             }

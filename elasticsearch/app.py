@@ -5,12 +5,19 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from functools import lru_cache
 
-from config import Settings
 from fastapi import FastAPI, HTTPException, Query, Request
-from schemas.wine import SearchResult
 from sentence_transformers import SentenceTransformer
 
 from elasticsearch import AsyncElasticsearch
+
+try:
+    from .config import Settings
+    from .schemas.wine import SearchResult
+except ImportError:
+    from config import Settings
+    from schemas.wine import SearchResult
+
+EMBEDDING_DIM = 256
 
 
 @lru_cache()
@@ -45,9 +52,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(
-    title="REST API for wine reviews on LanceDB",
+    title="REST API for wine reviews on Elasticsearch",
     description=(
-        "Query from a LanceDB database of 130k wine reviews from the Wine Enthusiast magazine"
+        "Query from an Elasticsearch index of 130k wine reviews from the Wine Enthusiast magazine"
     ),
     version="0.1.0",
     lifespan=lifespan,
@@ -59,7 +66,7 @@ app = FastAPI(
 @app.get("/", include_in_schema=False)
 async def root():
     return {
-        "message": "REST API for querying LanceDB database of 130k wine reviews from the Wine Enthusiast magazine"
+        "message": "REST API for querying Elasticsearch index of 130k wine reviews from the Wine Enthusiast magazine"
     }
 
 
@@ -87,7 +94,16 @@ async def _fts_search(request: Request, query: str) -> list[SearchResult] | None
 
 
 async def _vector_search(request: Request, query: str) -> list[SearchResult] | None:
-    query_vector = request.app.model.encode(query.lower()).tolist()
+    query_vector = request.app.model.encode(
+        f"search_query: {query.strip().lower()}",
+        show_progress_bar=False,
+        convert_to_numpy=True,
+        truncate_dim=EMBEDDING_DIM,
+    )
+    if len(query_vector.shape) != 1 or query_vector.shape[0] != EMBEDDING_DIM:
+        raise ValueError(
+            f"Expected query embedding shape ({EMBEDDING_DIM},), got {query_vector.shape}"
+        )
     response = await request.app.client.search(
         index="wines",
         size=10,
@@ -97,7 +113,7 @@ async def _vector_search(request: Request, query: str) -> list[SearchResult] | N
                 "script": {
                     "source": "cosineSimilarity(params.queryVector, 'vector') + 1.0",
                     "params": {
-                        "queryVector": query_vector,
+                        "queryVector": query_vector.astype("float32", copy=False).tolist(),
                     },
                 },
             }
