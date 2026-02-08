@@ -1,111 +1,159 @@
-# LanceDB benchmark: Full-text and vector search performance
+# LanceDB vs Elasticsearch benchmark
 
-Code for the benchmark study described in this [blog post](https://thedataquarry.com/posts/embedded-db-3/).
-
-[LanceDB](https://github.com/lancedb/lancedb) is an open source, embedded and developer-friendly vector database. Some key features about LanceDB that make it extremely valuable are listed below, among many others listed on their GitHub repo.
-
-* Incredibly lightweight (no DB servers to manage), because it runs entirely in-process with the application
-* Extremely scalable from development to production
-* Ability to perform full-text search (FTS), SQL search (via [DataFusion](https://github.com/apache/arrow-datafusion)) *and* ANN vector search
-* Multi-modal data support (images, text, video, audio, point-clouds, etc.)
-* Zero-copy (via [Arrow](https://github.com/apache/arrow-rs)) with automatic versioning of data on its native [Lance](https://github.com/lancedb/lance) storage format
-
-The aim of this repo is to demonstrate the full-text and vector search features of LanceDB via an end-to-end benchmark, in which we carefully study query results and throughput.
-
-## Dataset
-
-The dataset used for this demo is the [Wine Reviews](https://www.kaggle.com/zynicide/wine-reviews) dataset from Kaggle, containing ~130k reviews on wines along with other metadata. The dataset is converted to a ZIP archive, and the code for this as well as the ZIP data is provided here for reference.
-
-## Comparison
-
-Studying the performance of any tool in isolation is a challenge, so for the sake of comparison, an Elasticsearch workflow is provided in this repo. [Elasticsearch](https://github.com/elastic/elasticsearch) is a popular Lucene-based full-text and vector search engine whose use is regularly justified for full-text (and these days, vector search), so this makes it a meaningful tool to compare LanceDB against.
+Reproducible benchmark project comparing full-text search (FTS) and vector search between LanceDB and Elasticsearch on the Wine Reviews dataset.
 
 ## Setup
 
-Install the dependencies in virtual environment via `requirements.txt`.
+Run from repo root:
 
 ```sh
-# Setup the environment for the first time
-python -m venv .venv  # python -> python 3.11+
-
-# Activate the environment (for subsequent runs)
-source .venv/bin/activate
-
-python -m pip install -r requirements.txt
+uv sync
 ```
 
-## Benchmark results
+Create env files:
 
-> [!NOTE]
-> * The numbers below are from a 2022 M2 Macbook Pro with 16GB RAM
-> * The search space comprises 129,971 wine review descriptions in either LanceDB or Elasticsearch
-> * The queries are randomly sampled from a list of 10 example queries for FTS and vector search, and run for 10, 100, 1000 and 10000 random queries
-> * The vector dimensionality for the embeddings is 384 (`BAAI/bge-small-en-v1.5`)
-> * Vector search in Elasticsearch is based on Lucene-HNSW, and in LanceDB, is based on IVF-PQ
-> * The distance metric for vector search is cosine similarity in either DB
-> * The run times reported (and QPS computed) are an average over 3 runs
+```sh
+cp lancedb/.env.example lancedb/.env
+cp elasticsearch/.env.example elasticsearch/.env
+```
 
-### Summary of results for 10,000 random queries:
+- LanceDB defaults work out of the box if you keep `lancedb/.env.example` values.
+- Elasticsearch requires a valid DB password set up in `elasticsearch/.env` for your local container setup.
 
-Case | Elasticsearch (QPS) | LanceDB (QPS)
-:---|---:|---:
-FTS: Serial | 399.8 | **468.9**
-FTS: Concurrent | **1539.0** | 528.9
-Vector search: Serial | 11.9 | **54.0**
-Vector search: Concurrent | 50.7 | **71.6**
+## Shared benchmark queries
 
-### Discussion
+A set of keyword-based queries (for full-text search) and vector search queries are present in the following two files. These are sampled at random, 1000 times (with repetition) to create the query suites for the benchmarks.
 
-* Via their Python clients, LanceDB is clearly faster than Elasticsearch in terms of QPS (queries per second) for the vector search use case, and is also faster for the full-text search use case when using multiple threads concurrently.
-* Elasticsearch is faster **only** for the FTS use case, specifically in the concurrent scenario likely because it uses a non-blocking async client (unlike LanceDB, for now).
-* In the future, if an async (non-blocking) Python client is available for LanceDB, the throughput for LanceDB for FTS is expected to be even higher.
+- `bench_queries/keyword_terms.txt`
+- `bench_queries/vector_terms.txt`
 
-### Serial Benchmark
+## Benchmark protocol
 
-The serial benchmark shown below involves sequentially running queries in a sync for loop in Python. This isn't representative of a realistic use case in production, but is useful to understand the performance of the underlying search engines in each case (Lucene for Elasticsearch and Tantivy for LanceDB).
+The benchmark is run in two modes: a) using the async Python clients directly in LanceDB and Elasticsearch, and b) via a FastAPI REST server that calls the respective query endpoint for LanceDB and Elasticsearch.
 
-More details on this will be discussed in a blog post.
+Both modes use the same run protocol, averaged over 3 runs, per the following criteria:
 
-#### Full-text search (FTS)
+- Fixed query count: `1000` queries per search type (`fts`, `vector`) per trial
+- Fixed trial count: `3` trials per search type
+- Results containing QPS, P50/P95/P99 latencies
 
-Queries | Elasticsearch (sec)| Elasticsearch (QPS) | LanceDB (sec) | LanceDB (QPS)
-:---:|:---:|:---:|:---:|:---:
-10 | 0.0516 | **193.8** | 0.0518 | 193.0
-100 | 0.2589 | 386.3 | 0.2383 | **419.7**
-1000 | 2.5748 | 388.6 | 2.1759 | **459.3**
-10000 | 25.0318 | 399.8 | 21.3196 | **468.9**
+## Embedding model
 
-#### Vector search
+The `nomic-ai/modernbert-embed-base` embedding model [on Hugging Face](https://huggingface.co/nomic-ai/modernbert-embed-base), with 256 dimensions, is used for generating embeddings on the text fields.
 
-Queries | Elasticsearch (sec)| Elasticsearch (QPS) | LanceDB (sec) | LanceDB (QPS)
-:---:|:---:|:---:|:---:|:---:
-10 | 0.8087 | 12.4 | 0.2158 | **46.3**
-100 | 7.6020 | 13.1 | 1.6803 | **59.5**
-1000 | 84.0086 | 11.9 | 16.7948 | **59.5**
-10000 | 842.9494 | 11.9 | 185.0582 | **54.0**
+## LanceDB workflow
 
-### Concurrent Benchmark
+Run the following steps to ingest the data with embeddings, create and index
+and run the benchmarks for LanceDB.
 
-The concurrent benchmark is designed to replicate a realistic use case for LanceDB or Elasticsearch - where multiple queries arrive at the same time, and the REST API on top of the DB has to handle asynchronous requests.
+```bash
+cd lancedb
+```
 
-> [!NOTE]
-> * The concurrency in Elasticsearch is achieved through its async client
-> * The concurrency in LanceDB is achieved through Python's `multiprocessing` library on 4 worker threads (a higher number of threads resulted in slower performance).
+### 1. Ingest data + embeddings:
 
-#### Full-text search (FTS)
+```sh
+uv run ingest.py --overwrite
+```
 
-Queries | Elasticsearch (sec)| Elasticsearch (QPS) | LanceDB (sec) | LanceDB (QPS)
-:---:|:---:|:---:|:---:|:---:
-10 | 0.0350 | 285.7 | 0.0284 | **351.4**
-100 | 0.1243 | **804.1** | 0.2049 | 487.8
-1000 | 0.6972 | **1434.5** | 1.8980 | 526.8
-10000 | 6.4948 | **1539.0** | 18.9136 | 528.9
+### 2. Build indexes (FTS + IVF_PQ):
 
-#### Vector search
+```sh
+uv run index.py
+```
 
-Queries | Elasticsearch (sec)| Elasticsearch (QPS) | LanceDB, 4 threads (sec) | LanceDB, 4 threads (QPS)
-:---:|:---:|:---:|:---:|:---:
-10 | 0.2896 | 34.5 | 0.1409 | **71.0**
-100 | 2.5275 | 39.6 | 1.3367 | **74.8**
-1000 | 20.4268 | 48.9 | 13.3158 | **75.1**
-10000 | 197.2314 | 50.7 | 139.6330 | **71.6**
+### 3. Run direct-client benchmark (no FastAPI overhead):
+
+```sh
+uv run bench.py
+```
+
+### 4. End-to-end API benchmark:
+
+```sh
+uv run uvicorn app:app --host 0.0.0.0 --port 8000
+uv run bench_api.py
+```
+
+## Elasticsearch workflow
+
+Run the following steps to ingest the data with embeddings, create and index
+and run the benchmarks for Elasticsearch.
+
+### 1. Start Elasticsearch + Kibana:
+
+```sh
+cd elasticsearch && docker compose up --build
+```
+
+2. Ingest data + embeddings:
+
+```sh
+uv run elasticsearch/index.py
+```
+
+If you changed vector dims or mappings and hit indexing errors, rebuild the alias/index:
+
+```sh
+uv run elasticsearch/index.py --recreate-index
+```
+
+3. Run direct-client benchmark (no FastAPI overhead):
+
+```sh
+uv run elasticsearch/bench.py
+```
+
+4. Optional end-to-end API benchmark:
+
+```sh
+uv run uvicorn elasticsearch.app:app --host 0.0.0.0 --port 8000
+uv run elasticsearch/bench_api.py
+```
+
+### Results (Direct Async Client)
+
+This benchmark mode runs direct async client calls against LanceDB / Elasticsearch. It isolates search-engine + embedding/runtime behavior without FastAPI overhead.
+
+### LanceDB
+
+Loading weights: 100%|█| 134/134 [00:00<00:00, 7012.05it/s, Materializing param=layers.21.mlp_norm.weigh
+Averaged metrics over best-of-3 direct-client runs for 1000 queries per search type (fts, vector).
+| search | queries | runs | success_avg | elapsed_s_avg | qps_avg | p50_ms_avg | p95_ms_avg | p99_ms_avg | max_concurrency | seed | warmup_queries |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| fts | 1000 | 3 | 1000.00 | 0.6522 | 1534.34 | 10.18 | 14.28 | 15.92 | 16 | 37 | 10 |
+| vector | 1000 | 3 | 1000.00 | 10.3106 | 96.99 | 134.55 | 170.47 | 181.94 | 16 | 37 | 10 |
+
+### Elasticsearch
+
+Averaged metrics over best-of-3 direct-client runs for 1000 queries per search type (fts, vector).
+| search | queries | runs | success_avg | elapsed_s_avg | qps_avg | p50_ms_avg | p95_ms_avg | p99_ms_avg | max_concurrency | seed | warmup_queries |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| fts | 1000 | 3 | 1000.00 | 0.1681 | 5948.88 | 2.59 | 4.07 | 5.25 | 16 | 37 | 10 |
+| vector | 1000 | 3 | 1000.00 | 10.1893 | 98.14 | 110.37 | 212.83 | 222.35 | 16 | 37 | 10 |
+
+## Async API Bench (FastAPI)
+
+This benchmark mode runs requests through FastAPI endpoints over HTTP, mimicking a scenario in the real world where we would typically integrate the search engine as part of a larger stack. In such cases, it makes more sense to measure end-to-end service behavior, even if it introduces a small additional overhead due to the REST API.
+
+### LanceDB
+
+Averaged metrics over best-of-3 runs for 1000 queries per search type (fts, vector).
+| search | queries | runs | success_avg | elapsed_s_avg | qps_avg | p50_ms_avg | p95_ms_avg | p99_ms_avg | max_concurrency | seed | warmup_queries |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| fts | 1000 | 3 | 1000.00 | 0.7470 | 1338.69 | 11.49 | 16.29 | 18.40 | 16 | 37 | 10 |
+| vector | 1000 | 3 | 1000.00 | 10.4593 | 95.61 | 158.97 | 219.66 | 235.47 | 16 | 37 | 10 |
+
+### Elasticsearch
+
+Averaged metrics over best-of-3 runs for 1000 queries per search type (fts, vector).
+| search | queries | runs | success_avg | elapsed_s_avg | qps_avg | p50_ms_avg | p95_ms_avg | p99_ms_avg | max_concurrency | seed | warmup_queries |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| fts | 1000 | 3 | 1000.00 | 0.2899 | 3452.31 | 4.33 | 6.05 | 7.70 | 16 | 37 | 10 |
+| vector | 1000 | 3 | 1000.00 | 10.6418 | 93.97 | 203.52 | 224.66 | 256.44 | 16 | 37 | 10 |
+
+## Takeaways
+
+- This benchmark gives a quick sense of query performance, but there are many tunable components in both systems. Depending on your use case and how each solution is tuned, results may vary.
+- Benchmark numbers are a combination of multiple factors (index strategy, embedding/runtime cost, client stack, API overhead, deployment shape). End-to-end benchmarks in realistic environments are often the most meaningful.
+- For many practical use cases, the difference between a 10 ms response time and a 20 ms response time is not user-visible. Reliability, operability, and total system complexity often matter just as much as raw latency.
